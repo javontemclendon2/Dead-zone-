@@ -371,50 +371,129 @@ function tryInfectedStep(e,dx,dz){
 }
 const map=$('map').getContext('2d');function showToast(s,d=2){$('toast').textContent=s;$('toast').style.opacity='1';state.toastUntil=elapsed+d;}
 function audio(freq=180,d=.08){try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;if(!window.dzAudio)window.dzAudio=new AC();let a=window.dzAudio,c=a.createOscillator(),v=a.createGain();if(a.state==='suspended')a.resume();c.type='triangle';c.frequency.setValueAtTime(freq,a.currentTime);c.frequency.exponentialRampToValueAtTime(60,a.currentTime+d);v.gain.setValueAtTime(.07,a.currentTime);v.gain.exponentialRampToValueAtTime(.0001,a.currentTime+d);c.connect(v);v.connect(a.destination);c.start();c.stop(a.currentTime+d);}catch(_){}}
+
+const FIELD_LIMIT=36;
+const PACK_ITEMS=[['med','Medkits'],['rations','Food'],['bottles','Water'],['scrap','Scrap'],['bandages','Bandages'],['batteries','Batteries'],['flares','Flares']];
+const locker=Object.fromEntries(PACK_ITEMS.map(([key])=>[key,0]));
+function amount(key){return Math.max(0,Math.floor(Number(state[key])||0));}
+function packUsed(){return PACK_ITEMS.reduce((sum,[key])=>sum+amount(key),0);}
+function addSupply(key,count=1){
+ if(!PACK_ITEMS.some(([k])=>k===key)||!Number.isInteger(count)||count<1||packUsed()+count>FIELD_LIMIT)return false;
+ state[key]=amount(key)+count;return true;
+}
 function findNearest(){
- let best=null,nearestDistance=Infinity;
- function offer(kind,target,x,z,radius,label,action){const q=dist(x,z,state.x,state.z);if(q<=radius&&q<nearestDistance){best={kind,target,label,action};nearestDistance=q;}}
+ let best=null,d=Infinity;
+ function offer(kind,target,x,z,reach,label,action){const n=dist(x,z,state.x,state.z);if(n<reach&&n<d){best={kind,target,label,action};d=n;}}
  for(const l of loot)if(l.ready)offer('loot',l,l.x,l.z,3.2,'COLLECT '+l.type.toUpperCase()+' CACHE','USE');
- for(const d of doors)offer('door',d,d.x,d.z,2.9,d.open?'CLOSE DOOR':'OPEN DOOR',d.open?'CLOSE':'OPEN');
- for(const c of cars)if(!c.searched)offer('car',c,c.x,c.z,3.8,'SEARCH ABANDONED VEHICLE','SEARCH');
- for(const w of pickups)if(!w.collected)offer('weapon',w,w.x,w.z,2.8,'PICK UP PISTOL','TAKE');
+ for(const door of doors)offer('door',door,door.x,door.z,2.9,door.open?'CLOSE DOOR':'OPEN DOOR',door.open?'CLOSE':'OPEN');
+ for(const car of cars)if(!car.searched)offer('car',car,car.x,car.z,3.8,'SEARCH ABANDONED VEHICLE','SEARCH');
+ for(const weapon of pickups)if(!weapon.collected)offer('weapon',weapon,weapon.x,weapon.z,2.8,'PICK UP PISTOL','TAKE');
  for(const b of barricades)offer('barricade',b,b.x,b.z,2.3,'DISMANTLE BARRICADE · +2 SCRAP','REMOVE');
+ for(const c of containers)if(!c.searched)offer('container',c,c.x,c.z,2.7,'SEARCH '+c.label,'SEARCH');
+ offer('locker',houseLocker,houseLocker.x,houseLocker.z,2.45,'OPEN SAFEHOUSE STORAGE','OPEN');
+ offer('bed',houseBed,houseBed.x,houseBed.z,2.5,'REST 8 HOURS AT SAFEHOUSE','REST');
  return best;
 }
 function syncUseButton(){
  near=state.started&&!state.paused&&!state.dead?findNearest():null;
- const btn=$('interact'),hint=$('near');
- btn.style.display=near?'grid':'none';btn.disabled=!near;
- btn.textContent=near?near.action:'USE';
- btn.setAttribute('aria-label',near?near.label:'No object in reach');
+ const button=$('interact'),hint=$('near');
+ button.style.display=near?'grid':'none';button.disabled=!near;
+ button.textContent=near?near.action:'USE';
+ button.setAttribute('aria-label',near?near.label:'No object in reach');
  hint.style.display=near?'block':'none';if(near)hint.textContent=near.label;
 }
+function openLocker(){
+ state.paused=true;stopFiring();state.ads=false;syncCombatControls();$('stashPanel').style.display='flex';lockerUpdate();
+}
+function closeLocker(){$('stashPanel').style.display='none';state.paused=false;syncUseButton();updateHud();}
+function lockerUpdate(){
+ const list=$('stashList');list.replaceChildren();
+ for(const [key,title]of PACK_ITEMS){
+  const row=document.createElement('div');row.className='stashRow';
+  const label=document.createElement('span');label.textContent=title+' · Carry '+amount(key)+' · Stored '+locker[key];
+  const store=document.createElement('button');store.textContent='STORE 1';store.disabled=amount(key)<1;
+  store.addEventListener('click',()=>transfer(key,'store'));
+  const take=document.createElement('button');take.textContent='TAKE 1';take.disabled=locker[key]<1||packUsed()>=FIELD_LIMIT;
+  take.addEventListener('click',()=>transfer(key,'take'));
+  row.append(label,store,take);list.appendChild(row);
+ }
+}
+function transfer(key,direction){
+ if(!state.started||state.dead||!PACK_ITEMS.some(([k])=>k===key))return;
+ if(direction==='store'){if(amount(key)<1)return;state[key]--;locker[key]++;}
+ else if(direction==='take'){if(locker[key]<1||!addSupply(key,1))return;locker[key]--;}
+ else return;
+ lockerUpdate();save(false);
+}
+function restAtBed(){
+ if(infected.some(e=>e.alive&&dist(e.x,e.z,state.x,state.z)<13)){showToast('UNSAFE TO REST · INFECTED NEARBY',1.8);return;}
+ if((state.bleeding||0)>0){showToast('TREAT BLEEDING FIRST',1.6);return;}
+ if(state.food<15||state.water<15){showToast('NEED FOOD AND WATER TO REST',1.6);return;}
+ state.clock+=480;state.hp=clamp(state.hp+65,0,100);
+ state.food=Math.max(0,state.food-14);state.water=Math.max(0,state.water-19);
+ state.stamina=100;state.safehouseRested=true;
+ showToast('RESTED 8 HOURS · RECOVERED HEALTH',2);
+ refreshAtmosphere();save(false);updateHud();
+}
+function useBandage(){
+ if(amount('bandages')<1||((state.bleeding||0)<=0&&state.hp>=98))return;
+ state.bandages--;state.bleeding=0;state.hp=clamp(state.hp+14,0,100);
+ showToast('BANDAGED · BLEEDING STOPPED',1.5);bagUpdate();save(false);
+}
+function useBattery(){
+ if(amount('batteries')<1||(state.batteryCharge||0)>=98)return;
+ state.batteries--;state.batteryCharge=Math.min(100,(state.batteryCharge||0)+65);
+ showToast('FLASHLIGHT RECHARGED',1.4);bagUpdate();save(false);
+}
+function useFlare(){
+ if(amount('flares')<1)return;state.flares--;
+ const x=state.x+Math.sin(state.yaw)*4,z=state.z+Math.cos(state.yaw)*4;
+ const ball=orb(x,groundH(x,z)+.2,z,.19,new T.MeshBasicMaterial({color:0xff6333}));ball.castShadow=false;
+ const light=new T.PointLight(0xff6433,1.75,13,2);light.position.set(x,groundH(x,z)+.65,z);scene.add(light);
+ flares.push({x,z,ball,light,life:14});
+ $('bag').style.display='none';state.paused=false;
+ emitNoise(x,z,27,1.5);showToast('FLARE DEPLOYED · DECOY ACTIVE',1.6);
+ save(false);updateHud();
+}
+$('closeStash').addEventListener('click',closeLocker);
+$('useBandage').addEventListener('click',useBandage);
+$('useBattery').addEventListener('click',useBattery);
+$('useFlare').addEventListener('click',useFlare);
 function interact(){
- if(state.paused||state.dead)return;const hit=findNearest();if(!hit)return;
- const obj=hit.target;
+ if(state.paused||state.dead)return;
+ const hit=findNearest();if(!hit)return;const obj=hit.target;
  if(hit.kind==='loot'){
+  const mapping={med:['med',1],food:['rations',1],water:['bottles',1],scrap:['scrap',2],bandages:['bandages',1],batteries:['batteries',1],flares:['flares',1]};
+  const item=mapping[obj.type];
+  if(item&&!addSupply(item[0],item[1])){showToast('FIELD PACK FULL · USE SAFEHOUSE LOCKER',1.8);return;}
+  if(obj.type==='ammo')state.reserve+=25;
   obj.ready=false;obj.g.visible=false;state.found++;
-  switch(obj.type){
-   case 'med':state.med++;showToast('✚ MEDKIT ACQUIRED');break;
-   case 'food':state.rations++;showToast('+1 FOOD RATION');break;
-   case 'water':state.bottles++;showToast('+1 CLEAN WATER');break;
-   case 'ammo':state.reserve+=25;showToast('+25 RIFLE AMMO');break;
-   case 'scrap':state.scrap+=2;showToast('+2 FIELD SCRAP');break;
-  }
+  showToast(obj.type==='ammo'?'+25 RIFLE AMMO':'ACQUIRED '+obj.type.toUpperCase(),1.4);
  }else if(hit.kind==='door'){
   if(obj.open&&Math.abs(state.x-obj.x)<obj.w/2+.55&&Math.abs(state.z-obj.z)<.54){showToast('STEP CLEAR OF THE DOORWAY');return;}
-  obj.open=!obj.open;obj.hinge.rotation.y=obj.open?obj.face*PI*.49:0;showToast(obj.open?'DOOR OPENED':'DOOR CLOSED');
+  obj.open=!obj.open;obj.hinge.rotation.y=obj.open?obj.face*PI*.49:0;
+  showToast(obj.open?'DOOR OPENED':'DOOR CLOSED',1);
  }else if(hit.kind==='car'){
+  const n=obj.id%3;
+  if(n===0&&!addSupply('scrap',3)){showToast('FIELD PACK FULL',1.4);return;}
+  if(n===2&&packUsed()+2>FIELD_LIMIT){showToast('FIELD PACK FULL',1.4);return;}
   obj.searched=true;obj.hatch.rotation.x=-1.05;
-  if(obj.id%3===0){state.scrap+=3;showToast('CAR SALVAGED · +3 SCRAP');}
-  else if(obj.id%3===1){state.reserve+=22;showToast('GLOVE BOX · +22 RIFLE AMMO');}
-  else{state.med++;state.scrap++;showToast('TRUNK SEARCHED · MEDKIT + SCRAP');}
+  if(n===1){state.reserve+=22;showToast('GLOVEBOX · +22 AMMO');}
+  else if(n===0)showToast('CAR SALVAGED · +3 SCRAP');
+  else{addSupply('med',1);addSupply('scrap',1);showToast('TRUNK · MEDKIT + SCRAP');}
  }else if(hit.kind==='weapon'){
-  obj.collected=true;obj.g.visible=false;state.hasPistol=true;state.weapon='pistol';showToast('PISTOL ACQUIRED · EQUIPPED');
+  obj.collected=true;obj.g.visible=false;state.hasPistol=true;state.weapon='pistol';
+  syncCombatControls();showToast('PISTOL ACQUIRED · EQUIPPED');
  }else if(hit.kind==='barricade'){
-  const index=barricades.indexOf(obj);if(index<0)return;
-  if(obj.g)scene.remove(obj.g);barricades.splice(index,1);state.scrap+=2;showToast('BARRICADE REMOVED · +2 SCRAP');
- }
+  const i=barricades.indexOf(obj);if(i<0)return;
+  if(packUsed()+2>FIELD_LIMIT){showToast('FIELD PACK FULL');return;}
+  scene.remove(obj.g);barricades.splice(i,1);addSupply('scrap',2);showToast('BARRICADE DISMANTLED · +2 SCRAP');
+ }else if(hit.kind==='container'){
+  if(obj.item==='ammo')state.reserve+=28;
+  else if(!addSupply(obj.item,obj.qty)){showToast('FIELD PACK FULL · USE SAFEHOUSE LOCKER',1.5);return;}
+  obj.searched=true;showToast('FOUND '+obj.qty+' '+obj.item.toUpperCase(),1.5);
+ }else if(hit.kind==='locker'){openLocker();return;}
+ else if(hit.kind==='bed'){restAtBed();return;}
  audio(590,.085);save(false);syncUseButton();updateHud();
 }
 function equipWeapon(type){
@@ -459,18 +538,27 @@ function eat(){if(state.rations<1||state.food>=100)return;state.rations--;state.
 function drink(){if(state.bottles<1||state.water>=100)return;state.bottles--;state.water=clamp(state.water+42,0,100);showToast('WATER RESTORED');bagUpdate();save(false);}
 function buildBarricade(){if(state.scrap<3)return;let x=state.x+Math.sin(state.yaw)*3,z=state.z+Math.cos(state.yaw)*3;if(collides(x,z,1.1)){showToast('Not enough space to build');return;}state.scrap-=3;createBarricade(x,z,state.yaw);showToast('BARRICADE BUILT');bagUpdate();save(false);}
 function createBarricade(x,z,a=0){let g=new T.Group();g.position.set(x,groundH(x,z),z);g.rotation.y=a;scene.add(g);for(let i=0;i<3;i++){const plank=cube(0,.48+i*.42,0,3,.29,.24,mats.wood,g);plank.rotation.z=(i-1)*.09;}cube(-1.25,.8,.1,.19,1.7,.23,mats.metal,g);cube(1.25,.8,.1,.19,1.7,.23,mats.metal,g);barricades.push({x,z,w:3,d:.8,a,g});}
-function save(notify=true){try{localStorage.setItem(SAVE,JSON.stringify({v:2,state:{...state,started:undefined,paused:undefined,dead:undefined,auto:undefined},collected:loot.filter(l=>!l.ready).map(l=>l.id),openDoors:doors.filter(d=>d.open).map(d=>d.id),searchedCars:cars.filter(c=>c.searched).map(c=>c.id),pickedWeapons:pickups.filter(w=>w.collected).map(w=>w.id),barricades:barricades.map(b=>({x:b.x,z:b.z,a:b.a}))}));if(notify)showToast('PROGRESS SAVED');return true;}catch(_){if(notify)showToast('Browser storage unavailable');return false;}}
+function save(notify=true){try{localStorage.setItem(SAVE,JSON.stringify({v:2,state:{...state,started:undefined,paused:undefined,dead:undefined,auto:undefined},collected:loot.filter(l=>!l.ready).map(l=>l.id),openDoors:doors.filter(d=>d.open).map(d=>d.id),searchedCars:cars.filter(c=>c.searched).map(c=>c.id),pickedWeapons:pickups.filter(w=>w.collected).map(w=>w.id),searchedContainers:containers.filter(c=>c.searched).map(c=>c.id),locker:{...locker},barricades:barricades.map(b=>({x:b.x,z:b.z,a:b.a}))}));if(notify)showToast('PROGRESS SAVED');return true;}catch(_){if(notify)showToast('Browser storage unavailable');return false;}}
 function restore(){if(!saved)return;state={...state,...saved.state,started:false,paused:true,dead:false};state.hp=Math.max(1,state.hp);state.jumpY=0;state.jumpVel=0;state.grounded=true;state.ads=false;if(typeof state.flashlight!=='boolean')state.flashlight=false;if(Array.isArray(saved.collected))for(const i of saved.collected){if(loot[i]){loot[i].ready=false;loot[i].g.visible=false;}}if(Array.isArray(saved.openDoors))for(const i of saved.openDoors){const d=doors[i];if(d){d.open=true;d.hinge.rotation.y=d.face*PI*.49;}}
  if(Array.isArray(saved.searchedCars))for(const i of saved.searchedCars){const c=cars[i];if(c){c.searched=true;c.hatch.rotation.x=-1.05;}}
  if(Array.isArray(saved.pickedWeapons))for(const i of saved.pickedWeapons){const w=pickups[i];if(w){w.collected=true;w.g.visible=false;}}
  if(state.hasPistol){const w=pickups.find(w=>w.type==='pistol');if(w){w.collected=true;w.g.visible=false;}}
  if(!state.hasPistol&&state.weapon==='pistol')state.weapon='rifle';
+ if(saved.locker&&typeof saved.locker==='object')for(const [key]of PACK_ITEMS)locker[key]=Math.max(0,Math.floor(Number(saved.locker[key])||0));
+ if(Array.isArray(saved.searchedContainers))for(const id of saved.searchedContainers){if(containers[id])containers[id].searched=true;}
  if(Array.isArray(saved.barricades))for(const b of saved.barricades)createBarricade(b.x,b.z,b.a);start();showToast('SURVIVOR RESTORED');}
 function start(){state.paused=false;state.started=true;$('menu').style.display='none';$('bag').style.display='none';$('hud').style.display='block';refreshAtmosphere();$('flashlight').classList.toggle('active',!!state.flashlight);render();updateHud();syncCombatControls();}function showMenu(reason='pause'){state.paused=true;stopFiring();state.ads=false;syncCombatControls();$('menu').style.display='flex';$('bag').style.display='none';$('hud').style.display='none';$('start').textContent=reason==='dead'?'DEPLOY NEW SURVIVOR':'RESUME GAME →';$('menuText').textContent=reason==='dead'?`Survivor lost. ${state.kills} infected defeated and ${state.found} supplies recovered. Start again or load your last save.`:`Ashwood Junction · ${state.kills} infected down · ${state.found} supply crates found. Your game autosaves every 20 seconds.`;$('reset').style.display='block';$('continue').style.display=(saved||localStorage.getItem(SAVE))?'block':'none';}
-function bagUpdate(){$('bagmed').textContent=state.med+' available · HP '+Math.ceil(state.hp);$('bagscrap').textContent=state.scrap+' pieces';$('bagfood').textContent=state.rations+' available · Hunger '+Math.ceil(state.food);$('bagwater').textContent=state.bottles+' available · Thirst '+Math.ceil(state.water);$('heal').disabled=state.med<1||state.hp>=100;$('eat').disabled=state.rations<1||state.food>=100;$('drink').disabled=state.bottles<1||state.water>=100;$('build').disabled=state.scrap<3;
+function bagUpdate(){$('packSummary').textContent='FIELD PACK · '+packUsed()+' / '+FIELD_LIMIT+' SUPPLY SLOTS';$('bagmed').textContent=state.med+' available · HP '+Math.ceil(state.hp);$('bagscrap').textContent=state.scrap+' pieces';$('bagfood').textContent=state.rations+' available · Hunger '+Math.ceil(state.food);$('bagwater').textContent=state.bottles+' available · Thirst '+Math.ceil(state.water);$('heal').disabled=state.med<1||state.hp>=100;$('eat').disabled=state.rations<1||state.food>=100;$('drink').disabled=state.bottles<1||state.water>=100;$('build').disabled=state.scrap<3;
  $('bagweapon').textContent=state.weapon==='pistol'?'PISTOL EQUIPPED · '+state.pistolAmmo+' / '+state.pistolReserve:'RIFLE EQUIPPED · '+state.ammo+' / '+state.reserve;
  $('equipPistol').disabled=!state.hasPistol;$('equipPistol').textContent=state.hasPistol?'EQUIP PISTOL':'FIND A PISTOL';
- $('equipRifle').disabled=state.weapon==='rifle';if(state.hasPistol&&state.weapon==='pistol')$('equipPistol').disabled=true;}
+ $('equipRifle').disabled=state.weapon==='rifle';if(state.hasPistol&&state.weapon==='pistol')$('equipPistol').disabled=true;
+ $('bagbandages').textContent=amount('bandages')+' available · bleeding '+Math.ceil(state.bleeding||0);
+ $('bagbatteries').textContent=amount('batteries')+' available · flashlight '+Math.ceil(state.batteryCharge||0)+'%';
+ $('bagflares').textContent=amount('flares')+' available · distracting infected';
+ $('useBandage').disabled=amount('bandages')<1||((state.bleeding||0)<=0&&state.hp>=98);
+ $('useBattery').disabled=amount('batteries')<1||(state.batteryCharge||0)>=98;
+ $('useFlare').disabled=amount('flares')<1;
+}
 function openBag(){if(state.paused)return;state.paused=true;stopFiring();state.ads=false;syncCombatControls();bagUpdate();$('bag').style.display='flex';}
 $('start').addEventListener('click',()=>{if(state.dead){localStorage.removeItem(SAVE);location.reload();return;}start();});$('continue').addEventListener('click',()=>{try{saved=JSON.parse(localStorage.getItem(SAVE)||'null');}catch(_){}restore();});$('reset').addEventListener('click',()=>{localStorage.removeItem(SAVE);location.reload();});$('pause').addEventListener('click',()=>{save(false);showMenu();});$('inventory').addEventListener('click',openBag);$('closeBag').addEventListener('click',()=>{state.paused=false;$('bag').style.display='none';});$('heal').addEventListener('click',heal);$('eat').addEventListener('click',eat);$('drink').addEventListener('click',drink);$('build').addEventListener('click',buildBarricade);$('equipRifle').addEventListener('click',()=>equipWeapon('rifle'));$('equipPistol').addEventListener('click',()=>equipWeapon('pistol'));
 if(saved)$('continue').style.display='block';
