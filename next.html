@@ -42,6 +42,12 @@ body.aiming #crosshair{transform:translate(-50%,-50%) scale(.64)}
 #controlsMenu input[type=range]{width:100%;accent-color:#d4a168;touch-action:pan-x}
 #controlsMenu input[type=checkbox]{width:19px;height:19px;accent-color:#d4a168}
 @media(max-height:480px){#buttons{transform:scale(.73);transform-origin:bottom right}#leftFire{transform:scale(.83);transform-origin:bottom left}}
+
+#hudEditor{position:fixed;inset:0;z-index:32;display:none;pointer-events:none}
+#hudEditor .editorBar{position:absolute;top:calc(var(--safe-t) + 5px);left:50%;transform:translateX(-50%);background:#0b201ce9;border:1px solid #e6b87d;padding:7px 10px;display:flex;align-items:center;gap:10px;white-space:nowrap;pointer-events:auto;border-radius:7px}
+#hudEditor button{background:#d1a06e;color:#14201c;border:0;padding:7px 11px;font-weight:900;border-radius:5px}
+#hud.editing button,#hud.editing #joyArea{outline:1px dashed #f8cb81;outline-offset:2px}
+@media(max-width:720px){#hudEditor .editorBar{font-size:10px;gap:5px}#hudEditor button{padding:5px 6px}}
 </style>
 </head>
 <body>
@@ -72,6 +78,7 @@ body.aiming #crosshair{transform:translate(-50%,-50%) scale(.64)}
  <div class="slot">◆ <b>WATER</b><div id="bagwater" class="hint"></div><button id="drink">DRINK WATER</button></div>
  <div class="slot" style="grid-column:1/-1">⌖ <b>WEAPONS</b><div id="bagweapon" class="hint">Rifle equipped · search for a sidearm</div><div class="weaponOptions"><button id="equipRifle">EQUIP RIFLE</button><button id="equipPistol" disabled>PISTOL LOCKED</button></div></div>
  </div><button class="wide" id="closeBag">RETURN TO GAME →</button></div></div>
+<div id="hudEditor"><div class="editorBar"><span>DRAG HUD BUTTONS</span><button id="resetHudPositions">RESET</button><button id="doneHudEditor">DONE</button></div></div>
 <div id="controlsMenu"><div class="panel"><div class="eyebrow">TACTICAL TOUCH LAYOUT</div><h1 style="font-size:36px">CONTROLS</h1>
 <p>Mobile-shooter touch layout. Left thumb moves; right-side swipes aim.</p>
 <label for="lookSense">Camera sensitivity <span id="lookValue">100%</span></label><input id="lookSense" type="range" min="50" max="180" step="5" value="100">
@@ -79,7 +86,7 @@ body.aiming #crosshair{transform:translate(-50%,-50%) scale(.64)}
 <label for="extraFire">Optional left fire button <input id="extraFire" type="checkbox"></label>
 <label for="autoSprint">Auto-sprint at full joystick push <input id="autoSprint" type="checkbox" checked></label>
 <label for="invertY">Invert vertical aim <input id="invertY" type="checkbox"></label>
-<button class="wide" id="closeControls">SAVE & RETURN →</button><button class="wide secondary" id="resetControls">RESTORE DEFAULT CONTROLS</button>
+<button class="wide secondary" id="editHud">CUSTOMIZE HUD POSITIONS ✥</button><button class="wide" id="closeControls">SAVE & RETURN →</button><button class="wide secondary" id="resetControls">RESTORE DEFAULT CONTROLS</button>
 </div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -198,9 +205,62 @@ muzzlePistol.rotation.x=-PI/2;muzzlePistol.position.set(0,.065,-.54);sidearmGun.
 const emberMat=new T.MeshBasicMaterial({color:0xf5aa68,transparent:true,opacity:.82});
 let skyTime=0;
 let state={x:-4,z:-5,yaw:-.2,pitch:-.035,tps:false,hp:100,food:80,water:80,ammo:20,reserve:80,mag:20,kills:0,found:0,med:1,scrap:0,rations:1,bottles:1,time:0,clock:375,stamina:100,started:false,paused:true,dead:false,shotAt:-1,flash:0,damage:0,toastUntil:0,auto:0,weapon:'rifle',hasPistol:false,pistolAmmo:12,pistolReserve:20,ads:false,crouched:false,jumpY:0,jumpVel:0,grounded:true,hitFlash:0,shotCount:0};let joy={id:null,x:0,y:0},look={id:null,x:0,y:0},actions={fire:false,run:false},keys={},near=null,elapsed=0,frames=0,sway=0,recoil=0,adsBlend=0;
-const fireTouches=new Set(),DEFAULT_CONTROLS={look:100,ads:70,leftFire:false,autoSprint:true,invertY:false};let controlOptions={...DEFAULT_CONTROLS};
+const fireTouches=new Set(),DEFAULT_CONTROLS={look:100,ads:70,leftFire:false,autoSprint:true,invertY:false,positions:{}};let controlOptions={...DEFAULT_CONTROLS};
 try{let savedControls=JSON.parse(localStorage.getItem('deadzone_controls_v1')||'null');if(savedControls&&typeof savedControls==='object')controlOptions={...controlOptions,...savedControls};}catch(_){}
 function saveControlOptions(){try{localStorage.setItem('deadzone_controls_v1',JSON.stringify(controlOptions));}catch(_){}}
+const movableControls=['joyArea','fire','leftFire','aim','jump','crouch','interact','sprint','reload','camera','swap','inventory','pause','controlSettingsHud'];
+function hudScale(el){const parent=el.closest('#buttons');if(parent)return parent.getBoundingClientRect().width/parent.offsetWidth||1;return el.getBoundingClientRect().width/el.offsetWidth||1;}
+function applyHudPositions(){
+ const pos=controlOptions.positions||{};
+ for(const id of movableControls){
+  const el=$(id);if(!el)continue;
+  const v=pos[id]||{x:0,y:0};const scale=id==='joyArea'||id==='leftFire'?1:hudScale(el);
+  el.style.translate=(Number(v.x)||0)*innerWidth/100/scale+'px '+(Number(v.y)||0)*innerHeight/100/scale+'px';
+ }
+}
+let hudEditing=false,editorPointer=null,editorResume=false;
+function openHudEditor(){
+ editorResume=settingsWasPlaying;
+ $('controlsMenu').style.display='none';$('menu').style.display='none';
+ $('hud').style.display='block';$('hud').classList.add('editing');
+ $('hudEditor').style.display='block';hudEditing=true;state.paused=true;
+ $('swap').style.display='grid';$('interact').style.display='grid';$('leftFire').style.display='grid';applyHudPositions();
+}
+function closeHudEditor(){
+ if(editorPointer)editorPointer=null;hudEditing=false;
+ $('hudEditor').style.display='none';$('hud').classList.remove('editing');
+ controlOptions.positions=controlOptions.positions||{};saveControlOptions();
+ state.paused=!editorResume;
+ if(!state.started){$('hud').style.display='none';$('menu').style.display='flex';}
+ else {$('hud').style.display='block';}
+ syncCombatControls();syncUseButton();editorResume=false;
+ if(!state.paused){render();updateHud();}
+}
+$('editHud').addEventListener('click',openHudEditor);$('doneHudEditor').addEventListener('click',closeHudEditor);
+$('resetHudPositions').addEventListener('click',()=>{controlOptions.positions={};applyHudPositions();saveControlOptions();});
+$('hud').addEventListener('pointerdown',e=>{
+ if(!hudEditing)return;const target=e.target.closest('button,#joyArea');
+ if(!target||!movableControls.includes(target.id))return;
+ e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+ try{target.setPointerCapture(e.pointerId);}catch(_){}
+ const v=(controlOptions.positions||{})[target.id]||{x:0,y:0};
+ editorPointer={id:e.pointerId,target:startTarget(target),startX:e.clientX,startY:e.clientY,x:Number(v.x)||0,y:Number(v.y)||0};
+},true);
+function startTarget(node){return node.id;}
+$('hud').addEventListener('pointermove',e=>{
+ if(!hudEditing||!editorPointer||e.pointerId!==editorPointer.id)return;
+ e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+ const x=clamp(editorPointer.x+(e.clientX-editorPointer.startX)/innerWidth*100,-40,40);
+ const y=clamp(editorPointer.y+(e.clientY-editorPointer.startY)/innerHeight*100,-40,40);
+ if(!controlOptions.positions||typeof controlOptions.positions!=='object')controlOptions.positions={};
+ controlOptions.positions[editorPointer.target]={x,y};applyHudPositions();
+},true);
+function finishHudDrag(e){
+ if(!hudEditing||!editorPointer||e.pointerId!==editorPointer.id)return;
+ e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();editorPointer=null;saveControlOptions();
+}
+$('hud').addEventListener('pointerup',finishHudDrag,true);$('hud').addEventListener('pointercancel',finishHudDrag,true);
+addEventListener('resize',()=>{applyHudPositions();});
 function displayControls(){$('lookSense').value=controlOptions.look;$('adsSense').value=controlOptions.ads;$('lookValue').textContent=controlOptions.look+'%';$('adsValue').textContent=controlOptions.ads+'%';$('extraFire').checked=!!controlOptions.leftFire;$('autoSprint').checked=!!controlOptions.autoSprint;$('invertY').checked=!!controlOptions.invertY;$('leftFire').style.display=controlOptions.leftFire?'grid':'none';}
 let settingsWasPlaying=false;
 function stopFiring(){fireTouches.clear();actions.fire=false;}
@@ -216,7 +276,7 @@ function syncCombatControls(){$('aim').classList.toggle('active',!!state.ads);$(
 for(const id of ['lookSense','adsSense'])$(id).addEventListener('input',()=>{controlOptions[id==='lookSense'?'look':'ads']=Number($(id).value);displayControls();saveControlOptions();});
 for(const [id,prop]of[['extraFire','leftFire'],['autoSprint','autoSprint'],['invertY','invertY']])$(id).addEventListener('change',()=>{controlOptions[prop]=$(id).checked;displayControls();saveControlOptions();});
 $('controlSettings').addEventListener('click',openControlSettings);$('controlSettingsHud').addEventListener('click',openControlSettings);$('closeControls').addEventListener('click',closeControlSettings);
-$('resetControls').addEventListener('click',()=>{controlOptions={...DEFAULT_CONTROLS};displayControls();saveControlOptions();});displayControls();
+$('resetControls').addEventListener('click',()=>{controlOptions={...DEFAULT_CONTROLS,positions:{}};displayControls();applyHudPositions();saveControlOptions();});displayControls();applyHudPositions();
 const map=$('map').getContext('2d');function showToast(s,d=2){$('toast').textContent=s;$('toast').style.opacity='1';state.toastUntil=elapsed+d;}
 function audio(freq=180,d=.08){try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;if(!window.dzAudio)window.dzAudio=new AC();let a=window.dzAudio,c=a.createOscillator(),v=a.createGain();if(a.state==='suspended')a.resume();c.type='triangle';c.frequency.setValueAtTime(freq,a.currentTime);c.frequency.exponentialRampToValueAtTime(60,a.currentTime+d);v.gain.setValueAtTime(.07,a.currentTime);v.gain.exponentialRampToValueAtTime(.0001,a.currentTime+d);c.connect(v);v.connect(a.destination);c.start();c.stop(a.currentTime+d);}catch(_){}}
 function findNearest(){
