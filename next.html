@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0a1415">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>DEAD ZONE | Sector 7 – Alpha 0.4</title>
+<title>DEAD ZONE | Sector 7 – Alpha 0.5</title>
 <style>
 :root{color-scheme:dark;--bone:#e9e4d4;--amber:#e2a764;--green:#81ae91;--bg:#101d1d;--safe-b:env(safe-area-inset-bottom,0px);--safe-t:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#071314;color:var(--bone);font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;touch-action:none;-webkit-user-select:none;user-select:none}button{cursor:pointer;border:0;font:inherit;color:inherit;-webkit-user-select:none;user-select:none;touch-action:none}canvas{display:block;touch-action:none}#view{position:fixed;inset:0;overflow:hidden;background:linear-gradient(#607981,#b4b5a6 45%,#484f42)}#view>canvas{height:100%!important;width:100%!important;object-fit:cover}
@@ -48,6 +48,13 @@ body.aiming #crosshair{transform:translate(-50%,-50%) scale(.64)}
 #hudEditor button{background:#d1a06e;color:#14201c;border:0;padding:7px 11px;font-weight:900;border-radius:5px}
 #hud.editing button,#hud.editing #joyArea{outline:1px dashed #f8cb81;outline-offset:2px}
 @media(max-width:720px){#hudEditor .editorBar{font-size:10px;gap:5px}#hudEditor button{padding:5px 6px}}
+
+#flashlight{position:absolute;left:calc(50% + 47px);top:calc(var(--safe-t) + 45px);height:28px;width:50px;border-radius:7px;font-size:10px;background:#192921ca;border:1px solid #c2ab7c9a}
+#flashlight.active{color:#151c14;background:#ead7a0;border-color:#fff0c1}
+#threat{position:absolute;left:50%;top:calc(var(--safe-t) + 83px);transform:translateX(-50%);font-size:9px;color:#bfdfba;letter-spacing:.14em;background:#101f18a6;padding:3px 7px;border-radius:4px;white-space:nowrap}
+#threat.alert{color:#ffc68e;background:#4e291eb8}
+#threat.hunt{color:#ffe0d4;background:#912d25d4}
+#controlsMenu select{background:#1a3028;color:#ead7b5;border:1px solid #927e5b;border-radius:4px;padding:7px;margin-top:6px;width:100%;font-size:12px;touch-action:manipulation}
 </style>
 </head>
 <body>
@@ -60,13 +67,13 @@ body.aiming #crosshair{transform:translate(-50%,-50%) scale(.64)}
  <div id="crosshair"><i></i></div><div id="hit">×</div><div id="toast"></div><div id="near"></div>
  <div id="joyArea"><div id="joyBase"></div><div id="joyKnob"></div></div>
  <div id="buttons"><button id="fire" aria-label="Fire weapon">FIRE</button><button id="aim" aria-label="Aim down sights">ADS</button><button id="jump" aria-label="Jump">JUMP</button><button id="crouch" aria-label="Crouch">DUCK</button><button id="interact">USE</button><button id="sprint">RUN</button><button id="reload">RELOAD</button><button id="swap" aria-label="Swap weapon">SWAP</button><button id="camera">VIEW</button></div><button id="leftFire" aria-label="Fire weapon with left thumb">FIRE</button>
- <button id="inventory" class="hudBtn" aria-label="Open backpack">▣</button><button id="pause" class="hudBtn" aria-label="Pause">Ⅱ</button><button id="controlSettingsHud" aria-label="Touch control settings">⚙ HUD</button><div id="fps">FPS MODE · HOLD FIRE TO SHOOT</div>
+ <button id="inventory" class="hudBtn" aria-label="Open backpack">▣</button><button id="pause" class="hudBtn" aria-label="Pause">Ⅱ</button><button id="controlSettingsHud" aria-label="Touch control settings">⚙ HUD</button><button id="flashlight" class="hudBtn" aria-label="Toggle flashlight">LIGHT</button><div id="threat" aria-live="polite">UNDETECTED</div><div id="fps">FPS MODE · HOLD FIRE TO SHOOT</div>
 </div>
 <div id="rotation">↻ Rotate your iPhone sideways for the best experience</div>
 <div id="menu"><div class="panel">
- <div class="eyebrow">SURVIVOR TRANSMISSION // 07</div><h1>DEAD <span>ZONE</span></h1><div class="eyebrow" style="margin-top:10px;color:#b9c7ba">ALPHA 0.4 · ASHWOOD JUNCTION</div>
- <p id="menuText">The evacuation failed. Search an abandoned roadside settlement, survive the infected, scavenge supplies, and use scrap to build protection.</p>
- <div id="features"><div>◉ Improved 3D lighting & textures</div><div>⌖ First / third-person shooting</div><div>▣ Inventory, crafting & saving</div><div>✚ Infected, hunger & thirst</div></div>
+ <div class="eyebrow">SURVIVOR TRANSMISSION // 07</div><h1>DEAD <span>ZONE</span></h1><div class="eyebrow" style="margin-top:10px;color:#b9c7ba">ALPHA 0.5 · ASHWOOD JUNCTION</div>
+ <p id="menuText">The evacuation failed. Search Ashwood Junction while infected patrol, investigate noise, and hunt survivors. Stay quiet, use your flashlight at night, and scavenge what you need.</p>
+ <div id="features"><div>◉ Improved 3D lighting & textures</div><div>⌖ First / third-person shooting</div><div>▣ Inventory, crafting & saving</div><div>✚ Stealth AI, day/night & flashlight</div></div>
  <button class="wide" id="start">ENTER ASHWOOD →</button><button class="wide secondary" id="continue" style="display:none">CONTINUE SAVED SURVIVOR</button><button class="wide secondary" id="reset" style="display:none">NEW GAME / RESET</button><button class="wide secondary" id="controlSettings">CONTROLS & SENSITIVITY ⚙</button>
  <p class="fine">IPHONE: left thumb move · drag right screen to aim · FIRE to shoot · USE appears near objects · ADS, JUMP, DUCK, SWAP, and HUD sensitivity settings · VIEW to switch camera · RUN to sprint · backpack to craft and heal. Save is stored on this device only.</p>
  <p class="fine">Free WebGL 3D prototype. Three.js loads from a public CDN; game requires internet on first load. Optimized for mobile, but not yet console-grade visuals.</p>
@@ -80,12 +87,12 @@ body.aiming #crosshair{transform:translate(-50%,-50%) scale(.64)}
  </div><button class="wide" id="closeBag">RETURN TO GAME →</button></div></div>
 <div id="hudEditor"><div class="editorBar"><span>DRAG HUD BUTTONS</span><button id="resetHudPositions">RESET</button><button id="doneHudEditor">DONE</button></div></div>
 <div id="controlsMenu"><div class="panel"><div class="eyebrow">TACTICAL TOUCH LAYOUT</div><h1 style="font-size:36px">CONTROLS</h1>
-<p>Mobile-shooter touch layout. Left thumb moves; right-side swipes aim.</p>
+<p>Mobile-shooter touch layout. Left thumb moves; right-side swipes aim. Use Battery saver if your phone gets hot or the frame rate drops.</p>
 <label for="lookSense">Camera sensitivity <span id="lookValue">100%</span></label><input id="lookSense" type="range" min="50" max="180" step="5" value="100">
 <label for="adsSense">ADS sensitivity <span id="adsValue">70%</span></label><input id="adsSense" type="range" min="35" max="130" step="5" value="70">
 <label for="extraFire">Optional left fire button <input id="extraFire" type="checkbox"></label>
 <label for="autoSprint">Auto-sprint at full joystick push <input id="autoSprint" type="checkbox" checked></label>
-<label for="invertY">Invert vertical aim <input id="invertY" type="checkbox"></label>
+<label for="invertY">Invert vertical aim <input id="invertY" type="checkbox"></label><label for="graphicsPreset">iPhone graphics quality</label><select id="graphicsPreset"><option value="balanced">Balanced</option><option value="low">Battery saver</option><option value="high">Higher detail</option></select>
 <button class="wide secondary" id="editHud">CUSTOMIZE HUD POSITIONS ✥</button><button class="wide" id="closeControls">SAVE & RETURN →</button><button class="wide secondary" id="resetControls">RESTORE DEFAULT CONTROLS</button>
 </div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -97,7 +104,7 @@ if(!window.THREE){$('menuText').textContent='The 3D engine could not load. Pleas
 const T=THREE,scene=new T.Scene();scene.background=new T.Color(0xa6b6ad);scene.fog=new T.FogExp2(0xa6b6ad,.008);const camera=new T.PerspectiveCamera(72,1,.08,260),renderer=new T.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
 const mobile=/iPhone|iPad|iPod|Android/.test(navigator.userAgent);renderer.setPixelRatio(Math.min(devicePixelRatio||1,mobile?1.25:1.65));renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.outputEncoding=T.sRGBEncoding;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.17;$('view').appendChild(renderer.domElement);let renderWidth=0,renderHeight=0;
 function resize(){let w=innerWidth,h=innerHeight;if(w===renderWidth&&h===renderHeight)return;renderWidth=w;renderHeight=h;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}addEventListener('resize',resize);resize();
-scene.add(new T.HemisphereLight(0xc9d8e0,0x3c3927,1.65));const sun=new T.DirectionalLight(0xffdfb1,2.25);sun.position.set(-55,88,-32);sun.castShadow=true;sun.shadow.mapSize.set(mobile?1024:2048,mobile?1024:2048);sun.shadow.camera.left=-80;sun.shadow.camera.right=80;sun.shadow.camera.top=80;sun.shadow.camera.bottom=-80;sun.shadow.camera.near=5;sun.shadow.camera.far=220;sun.shadow.bias=-.0004;sun.shadow.normalBias=.035;sun.target.position.set(0,0,0);scene.add(sun,sun.target);
+const hemiLight=new T.HemisphereLight(0xc9d8e0,0x3c3927,1.65);scene.add(hemiLight);const sun=new T.DirectionalLight(0xffdfb1,2.25);sun.position.set(-55,88,-32);sun.castShadow=true;sun.shadow.mapSize.set(mobile?1024:2048,mobile?1024:2048);sun.shadow.camera.left=-80;sun.shadow.camera.right=80;sun.shadow.camera.top=80;sun.shadow.camera.bottom=-80;sun.shadow.camera.near=5;sun.shadow.camera.far=220;sun.shadow.bias=-.0004;sun.shadow.normalBias=.035;sun.target.position.set(0,0,0);scene.add(sun,sun.target);
 // Procedural diffuse maps keep this build asset-free while adding surface variation.
 function tex(type,w=256){const c=document.createElement('canvas');c.width=c.height=w;const g=c.getContext('2d'),im=g.createImageData(w,w),base={grass:[80,95,67],dirt:[121,107,83],road:[65,67,62],concrete:[145,139,122],plaster:[139,134,117],brick:[108,93,79],roof:[65,68,63],rust:[103,77,60],wood:[90,75,58],bark:[89,76,62],leaf:[57,81,52]}[type]||[125,120,106];let seed=type.length*19837+42;function rnd(){seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;}for(let y=0;y<w;y++)for(let x=0;x<w;x++){let i=(y*w+x)*4;let fine=(rnd()-.5)*32,grain=(Math.sin(x*.22+y*.11)+Math.sin(y*.09-x*.13))*4,coarse=(Math.sin(Math.floor(x/31)*9+Math.floor(y/34)*13))*6;let stripe=type==='wood'?Math.sin(x*.37)*7:0;for(let j=0;j<3;j++)im.data[i+j]=clamp(base[j]+fine+grain+coarse+stripe,0,255);im.data[i+3]=255;}g.putImageData(im,0,0);if(type==='road'){g.strokeStyle='#252a28';g.lineWidth=1;for(let i=0;i<13;i++){g.beginPath();let x=rnd()*w,y=rnd()*w;g.moveTo(x,y);for(let j=0;j<5;j++){x+=(rnd()-.5)*30;y+=rnd()*14;g.lineTo(x,y);}g.stroke();}}if(type==='brick'){g.strokeStyle='#574e44';g.lineWidth=2;for(let y=0;y<w;y+=29){g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke();for(let x=((y/29)%2)*29;x<w;x+=58){g.beginPath();g.moveTo(x,y);g.lineTo(x,y+29);g.stroke();}}}if(type==='wood'){g.strokeStyle='#544638';g.lineWidth=1;for(let i=0;i<16;i++){let x=rnd()*w;g.beginPath();g.moveTo(x,0);g.bezierCurveTo(x+5,80,x-6,164,x+3,w);g.stroke();}}const t=new T.CanvasTexture(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.anisotropy=renderer.capabilities.getMaxAnisotropy?Math.min(4,renderer.capabilities.getMaxAnisotropy()):1;t.encoding=T.sRGBEncoding;return t;}
 const tx={};for(const name of ['grass','dirt','road','concrete','plaster','brick','roof','rust','wood','bark','leaf'])tx[name]=tex(name);
@@ -186,9 +193,14 @@ function human(g,zombie=false){let root=new T.Group(),cloth=zombie?mats.red:mats
  cube(-.2,1.53,.218,.16,.4,.045,mats.rust,root);
  cube(.19,1.81,.23,.14,.22,.06,mats.black,root);
  }const arms=[],legs=[];for(let s of [-1,1]){let a=new T.Group();a.position.set(s*.46,1.98,0);root.add(a);cube(s*.01,-.38,0,.23,.76,.26,cloth,a);orb(s*.01,-.78,0,.11,skin,a);arms.push(a);let l=new T.Group();l.position.set(s*.21,1.14,0);root.add(l);cube(0,-.48,0,.29,.93,.32,legmat,l);cube(0,-.94,.16,.34,.2,.48,mats.black,l);if(!zombie){cube(0,-.51,.19,.30,.20,.09,mats.black,l);cube(0,-.72,-.16,.27,.26,.06,mats.metal,l);}legs.push(l);}return {root,arms,legs,head};}
-function spawnInfected(x,z,i){let g=new T.Group();scene.add(g);let rig=human(g,true);g.position.set(x,groundH(x,z),z);return {g,rig,x,z,homeX:x,homeZ:z,hp:95,alive:true,respawn:0,phase:i*1.3,attack:0,speed:range(.92,1.44),yaw:0,flinch:0};}
+function spawnInfected(x,z,i){let g=new T.Group();scene.add(g);let rig=human(g,true);g.position.set(x,groundH(x,z),z);return {g,rig,x,z,homeX:x,homeZ:z,hp:95,alive:true,respawn:0,phase:i*1.3,attack:0,speed:range(.92,1.44),yaw:0,flinch:0,ai:'patrol',alertTimer:0,searchTimer:0,patrolTimer:0,goalX:x,goalZ:z,patrolPhase:i*1.4};}
 for(let i=0;i<8;i++){let [x,z]=[[11,20],[-28,-5],[21,59],[-33,-46],[40,-15],[-36,36],[17,-62],[55,42]][i];infected.push(spawnInfected(x,z,i));}
 const avatar=new T.Group();const soldier=human(avatar,false);scene.add(avatar);const fpGun=new T.Group();camera.add(fpGun);scene.add(camera);
+const torch=new T.SpotLight(0xf4ebcf,3,23,PI/5,.48,1.4);
+torch.position.set(0,-.10,-.24);torch.castShadow=false;camera.add(torch);
+const torchAim=new T.Object3D();torchAim.position.set(0,-.10,-8);camera.add(torchAim);torch.target=torchAim;
+const nightSky=new T.Color(0x111c2c),daySky=new T.Color(0xa6b6ad);
+let daylight=1;
 function weapon(parent,fp){let g=new T.Group();parent.add(g);const m=mats.dark;cube(0,0,0,.17,.2,.95,m,g);cube(0,.13,-.08,.16,.13,.5,mats.metal,g);cube(0,-.2,.22,.13,.27,.25,mats.black,g);cube(0,.04,-.53,.095,.11,.47,mats.metal,g);cyl(0,.04,-.81,.06,.52,mats.black,g).rotation.x=PI/2;cube(0,.25,-.16,.06,.16,.14,mats.black,g);cube(0,-.06,.52,.16,.15,.43,mats.wood,g);
 // Handguard ribs, sight housing, charging handle and shoulder pad for a more legible silhouette.
 for(let i=0;i<5;i++)cube(0,.085,-.62+i*.112,.23,.044,.045,mats.metal,g);
@@ -204,11 +216,11 @@ const muzzlePistol=new T.Mesh(new T.ConeGeometry(.11,.35,6),muzzleMat);
 muzzlePistol.rotation.x=-PI/2;muzzlePistol.position.set(0,.065,-.54);sidearmGun.add(muzzlePistol);
 const emberMat=new T.MeshBasicMaterial({color:0xf5aa68,transparent:true,opacity:.82});
 let skyTime=0;
-let state={x:-4,z:-5,yaw:-.2,pitch:-.035,tps:false,hp:100,food:80,water:80,ammo:20,reserve:80,mag:20,kills:0,found:0,med:1,scrap:0,rations:1,bottles:1,time:0,clock:375,stamina:100,started:false,paused:true,dead:false,shotAt:-1,flash:0,damage:0,toastUntil:0,auto:0,weapon:'rifle',hasPistol:false,pistolAmmo:12,pistolReserve:20,ads:false,crouched:false,jumpY:0,jumpVel:0,grounded:true,hitFlash:0,shotCount:0};let joy={id:null,x:0,y:0},look={id:null,x:0,y:0},actions={fire:false,run:false},keys={},near=null,elapsed=0,frames=0,sway=0,recoil=0,adsBlend=0;
-const fireTouches=new Set(),DEFAULT_CONTROLS={look:100,ads:70,leftFire:false,autoSprint:true,invertY:false,positions:{}};let controlOptions={...DEFAULT_CONTROLS};
+let state={x:-4,z:-5,yaw:-.2,pitch:-.035,tps:false,hp:100,food:80,water:80,ammo:20,reserve:80,mag:20,kills:0,found:0,med:1,scrap:0,rations:1,bottles:1,time:0,clock:375,stamina:100,started:false,paused:true,dead:false,shotAt:-1,flash:0,damage:0,toastUntil:0,auto:0,weapon:'rifle',hasPistol:false,pistolAmmo:12,pistolReserve:20,ads:false,crouched:false,jumpY:0,jumpVel:0,grounded:true,hitFlash:0,shotCount:0,flashlight:false};let joy={id:null,x:0,y:0},look={id:null,x:0,y:0},actions={fire:false,run:false},keys={},near=null,elapsed=0,frames=0,sway=0,recoil=0,adsBlend=0;
+const fireTouches=new Set(),DEFAULT_CONTROLS={look:100,ads:70,leftFire:false,autoSprint:true,invertY:false,graphics:'balanced',positions:{}};let controlOptions={...DEFAULT_CONTROLS};
 try{let savedControls=JSON.parse(localStorage.getItem('deadzone_controls_v1')||'null');if(savedControls&&typeof savedControls==='object')controlOptions={...controlOptions,...savedControls};}catch(_){}
 function saveControlOptions(){try{localStorage.setItem('deadzone_controls_v1',JSON.stringify(controlOptions));}catch(_){}}
-const movableControls=['joyArea','fire','leftFire','aim','jump','crouch','interact','sprint','reload','camera','swap','inventory','pause','controlSettingsHud'];
+const movableControls=['joyArea','fire','leftFire','aim','jump','crouch','interact','sprint','reload','camera','swap','inventory','pause','controlSettingsHud','flashlight'];
 function hudScale(el){const parent=el.closest('#buttons');if(parent)return parent.getBoundingClientRect().width/parent.offsetWidth||1;return el.getBoundingClientRect().width/el.offsetWidth||1;}
 function applyHudPositions(){
  const pos=controlOptions.positions||{};
@@ -261,7 +273,7 @@ function finishHudDrag(e){
 }
 $('hud').addEventListener('pointerup',finishHudDrag,true);$('hud').addEventListener('pointercancel',finishHudDrag,true);
 addEventListener('resize',()=>{applyHudPositions();});
-function displayControls(){$('lookSense').value=controlOptions.look;$('adsSense').value=controlOptions.ads;$('lookValue').textContent=controlOptions.look+'%';$('adsValue').textContent=controlOptions.ads+'%';$('extraFire').checked=!!controlOptions.leftFire;$('autoSprint').checked=!!controlOptions.autoSprint;$('invertY').checked=!!controlOptions.invertY;$('leftFire').style.display=controlOptions.leftFire?'grid':'none';}
+function displayControls(){$('lookSense').value=controlOptions.look;$('adsSense').value=controlOptions.ads;$('lookValue').textContent=controlOptions.look+'%';$('adsValue').textContent=controlOptions.ads+'%';$('extraFire').checked=!!controlOptions.leftFire;$('autoSprint').checked=!!controlOptions.autoSprint;$('invertY').checked=!!controlOptions.invertY;$('graphicsPreset').value=['low','balanced','high'].includes(controlOptions.graphics)?controlOptions.graphics:'balanced';$('leftFire').style.display=controlOptions.leftFire?'grid':'none';}
 let settingsWasPlaying=false;
 function stopFiring(){fireTouches.clear();actions.fire=false;}
 function beginFiring(id){fireTouches.add(id);actions.fire=true;fire();}
@@ -275,8 +287,46 @@ function swapWeapon(){if(state.paused||state.dead)return;if(!state.hasPistol){sh
 function syncCombatControls(){$('aim').classList.toggle('active',!!state.ads);$('crouch').classList.toggle('active',!!state.crouched);document.body.classList.toggle('aiming',!!state.ads);$('swap').style.display=state.hasPistol?'grid':'none';$('leftFire').style.display=controlOptions.leftFire?'grid':'none';}
 for(const id of ['lookSense','adsSense'])$(id).addEventListener('input',()=>{controlOptions[id==='lookSense'?'look':'ads']=Number($(id).value);displayControls();saveControlOptions();});
 for(const [id,prop]of[['extraFire','leftFire'],['autoSprint','autoSprint'],['invertY','invertY']])$(id).addEventListener('change',()=>{controlOptions[prop]=$(id).checked;displayControls();saveControlOptions();});
+function applyGraphicsMode(){
+ const preset=['low','balanced','high'].includes(controlOptions.graphics)?controlOptions.graphics:'balanced';
+ const dpr=Math.min(window.devicePixelRatio||1,preset==='low'?1:preset==='high'?(mobile?1.5:1.75):(mobile?1.25:1.65));
+ renderer.setPixelRatio(dpr);renderer.shadowMap.enabled=preset!=='low';renderer.shadowMap.needsUpdate=true;
+ scene.traverse(o=>{if(o.isMesh&&o.material){const ms=Array.isArray(o.material)?o.material:[o.material];for(const m of ms)m.needsUpdate=true;}});
+ renderWidth=0;renderHeight=0;resize();
+}
+$('graphicsPreset').addEventListener('change',()=>{controlOptions.graphics=$('graphicsPreset').value;applyGraphicsMode();saveControlOptions();});
+applyGraphicsMode();
 $('controlSettings').addEventListener('click',openControlSettings);$('controlSettingsHud').addEventListener('click',openControlSettings);$('closeControls').addEventListener('click',closeControlSettings);
-$('resetControls').addEventListener('click',()=>{controlOptions={...DEFAULT_CONTROLS,positions:{}};displayControls();applyHudPositions();saveControlOptions();});displayControls();applyHudPositions();
+$('resetControls').addEventListener('click',()=>{controlOptions={...DEFAULT_CONTROLS,positions:{}};displayControls();applyHudPositions();applyGraphicsMode();saveControlOptions();});displayControls();applyHudPositions();
+let noisePulse=null,lastStepPulse=-10,threatMode='quiet';
+function emitNoise(x,z,radius,life=.45){noisePulse={x,z,radius,until:elapsed+life};}
+function daylightAt(clock){const hour=(((clock%1440)+1440)%1440)/60;return clamp((Math.sin((hour-6)*PI/12)+.18)*1.25,.09,1);}
+function refreshAtmosphere(){
+ daylight=daylightAt(state.clock);scene.background.copy(nightSky).lerp(daySky,daylight);
+ scene.fog.color.copy(scene.background);scene.fog.density=.008+(.004*(1-daylight));
+ hemiLight.intensity=.25+1.4*daylight;sun.intensity=.08+2.17*daylight;lamp.intensity=1.95*(1-daylight)+.14;
+ torch.visible=!!state.flashlight;
+}
+function toggleFlashlight(){if(state.paused||state.dead)return;state.flashlight=!state.flashlight;
+ $('flashlight').classList.toggle('active',state.flashlight);showToast(state.flashlight?'FLASHLIGHT ON':'FLASHLIGHT OFF',.9);
+ refreshAtmosphere();}
+$('flashlight').addEventListener('click',toggleFlashlight);
+function updateThreatDisplay(){
+ let chasing=0,searching=0;for(const e of infected){if(!e.alive)continue;if(e.ai==='chase')chasing++;else if(e.ai==='investigate')searching++;}
+ const label=$('threat');const next=chasing?'hunt':searching?'alert':'quiet';
+ if(next!==threatMode){threatMode=next;label.classList.toggle('hunt',chasing>0);label.classList.toggle('alert',!chasing&&searching>0);}
+ label.textContent=chasing?'HUNTED · '+chasing+' INFECTED':searching?'NOISE DETECTED · '+searching:'UNDETECTED';
+}
+function tryInfectedStep(e,dx,dz){
+ const nx=e.x+dx,nz=e.z+dz;
+ if(!collides(nx,nz,.28)){e.x=nx;e.z=nz;return true;}
+ if(!collides(nx,e.z,.28)){e.x=nx;return true;}
+ if(!collides(e.x,nz,.28)){e.z=nz;return true;}
+ // Sidestep a corner rather than repeatedly running into one wall.
+ const sign=Math.sin(e.phase+elapsed)>0?1:-1,sideX=-dz*sign,sideZ=dx*sign;
+ if(!collides(e.x+sideX,e.z+sideZ,.28)){e.x+=sideX;e.z+=sideZ;return true;}
+ return false;
+}
 const map=$('map').getContext('2d');function showToast(s,d=2){$('toast').textContent=s;$('toast').style.opacity='1';state.toastUntil=elapsed+d;}
 function audio(freq=180,d=.08){try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;if(!window.dzAudio)window.dzAudio=new AC();let a=window.dzAudio,c=a.createOscillator(),v=a.createGain();if(a.state==='suspended')a.resume();c.type='triangle';c.frequency.setValueAtTime(freq,a.currentTime);c.frequency.exponentialRampToValueAtTime(60,a.currentTime+d);v.gain.setValueAtTime(.07,a.currentTime);v.gain.exponentialRampToValueAtTime(.0001,a.currentTime+d);c.connect(v);v.connect(a.destination);c.start();c.stop(a.currentTime+d);}catch(_){}}
 function findNearest(){
@@ -348,7 +398,7 @@ function shotBlocked(ex,ez){
 function fire(){const pistol=state.weapon==='pistol',ammo=pistol?'pistolAmmo':'ammo';
  if(state.paused||state.dead||elapsed-state.shotAt<(pistol?.33:.2))return;
  state.shotAt=elapsed;if(state[ammo]<=0){reload();if(state[ammo]===0)showToast('OUT OF AMMUNITION');return;}
- state[ammo]--;recoil=1;state.flash=.09;state.shotCount++;
+ state[ammo]--;recoil=1;state.flash=.09;state.shotCount++;emitNoise(state.x,state.z,42,1.35);
 state.pitch=clamp(state.pitch+(state.ads?.007:.013)*(pistol?.85:1),-.7,.72);
 audio(pistol?260:135,.12);
  let selected=null,dd=999;for(const e of infected){if(!e.alive)continue;let d=dist(e.x,e.z,state.x,state.z);if(d>(pistol?35:56))continue;let dx=e.x-state.x,dz=e.z-state.z,a=Math.atan2(dx,dz),off=Math.atan2(Math.sin(a-state.yaw),Math.cos(a-state.yaw));let eyeHeight=(state.crouched?1.19:1.67)+state.jumpY;
@@ -374,7 +424,7 @@ function restore(){if(!saved)return;state={...state,...saved.state,started:false
  if(state.hasPistol){const w=pickups.find(w=>w.type==='pistol');if(w){w.collected=true;w.g.visible=false;}}
  if(!state.hasPistol&&state.weapon==='pistol')state.weapon='rifle';
  if(Array.isArray(saved.barricades))for(const b of saved.barricades)createBarricade(b.x,b.z,b.a);start();showToast('SURVIVOR RESTORED');}
-function start(){state.paused=false;state.started=true;$('menu').style.display='none';$('bag').style.display='none';$('hud').style.display='block';render();updateHud();syncCombatControls();}function showMenu(reason='pause'){state.paused=true;stopFiring();state.ads=false;syncCombatControls();$('menu').style.display='flex';$('bag').style.display='none';$('hud').style.display='none';$('start').textContent=reason==='dead'?'DEPLOY NEW SURVIVOR':'RESUME GAME →';$('menuText').textContent=reason==='dead'?`Survivor lost. ${state.kills} infected defeated and ${state.found} supplies recovered. Start again or load your last save.`:`Ashwood Junction · ${state.kills} infected down · ${state.found} supply crates found. Your game autosaves every 20 seconds.`;$('reset').style.display='block';$('continue').style.display=(saved||localStorage.getItem(SAVE))?'block':'none';}
+function start(){state.paused=false;state.started=true;$('menu').style.display='none';$('bag').style.display='none';$('hud').style.display='block';refreshAtmosphere();$('flashlight').classList.toggle('active',!!state.flashlight);render();updateHud();syncCombatControls();}function showMenu(reason='pause'){state.paused=true;stopFiring();state.ads=false;syncCombatControls();$('menu').style.display='flex';$('bag').style.display='none';$('hud').style.display='none';$('start').textContent=reason==='dead'?'DEPLOY NEW SURVIVOR':'RESUME GAME →';$('menuText').textContent=reason==='dead'?`Survivor lost. ${state.kills} infected defeated and ${state.found} supplies recovered. Start again or load your last save.`:`Ashwood Junction · ${state.kills} infected down · ${state.found} supply crates found. Your game autosaves every 20 seconds.`;$('reset').style.display='block';$('continue').style.display=(saved||localStorage.getItem(SAVE))?'block':'none';}
 function bagUpdate(){$('bagmed').textContent=state.med+' available · HP '+Math.ceil(state.hp);$('bagscrap').textContent=state.scrap+' pieces';$('bagfood').textContent=state.rations+' available · Hunger '+Math.ceil(state.food);$('bagwater').textContent=state.bottles+' available · Thirst '+Math.ceil(state.water);$('heal').disabled=state.med<1||state.hp>=100;$('eat').disabled=state.rations<1||state.food>=100;$('drink').disabled=state.bottles<1||state.water>=100;$('build').disabled=state.scrap<3;
  $('bagweapon').textContent=state.weapon==='pistol'?'PISTOL EQUIPPED · '+state.pistolAmmo+' / '+state.pistolReserve:'RIFLE EQUIPPED · '+state.ammo+' / '+state.reserve;
  $('equipPistol').disabled=!state.hasPistol;$('equipPistol').textContent=state.hasPistol?'EQUIP PISTOL':'FIND A PISTOL';
@@ -421,7 +471,7 @@ function update(dt){elapsed+=dt;state.time+=dt;state.clock+=dt*7;state.damage=Ma
  let movement=d<24?1:0;e.rig.arms[0].rotation.x=Math.sin(elapsed*6+e.phase)*.5*movement-.5;e.rig.arms[1].rotation.x=-Math.sin(elapsed*6+e.phase)*.5*movement-.5;for(let j=0;j<2;j++)e.rig.legs[j].rotation.x=Math.sin(elapsed*6+e.phase+j*PI)*.42*movement;e.attack-=dt;if(d<1.8&&e.attack<=0){e.attack=1.3;state.hp-=8;state.damage=.8;showToast('INFECTED ATTACK · MOVE AWAY',.65);audio(78,.15);}}
  for(const l of loot)if(l.ready){l.glow.position.y=1.7+Math.sin(elapsed*2+l.id)*.19;l.glow.rotation.y+=dt*.6;}for(const o of fx){o.ttl-=dt;if(o.ttl<=0){scene.remove(o.mesh);o.mesh.geometry.dispose();fx.splice(fx.indexOf(o),1);}}
  if(state.hp<=0){state.hp=0;state.dead=true;showMenu('dead');return;}state.auto+=dt;if(state.auto>20){state.auto=0;save(false);}if(state.toastUntil<elapsed)$('toast').style.opacity='0';$('blood').style.opacity=state.damage*.9;$('hit').style.opacity=state.hitFlash>0?.9:0;
- if((frames++%8)===0){updateHud();drawMap();}}
+ if((frames++%8)===0){updateHud();drawMap();updateThreatDisplay();}if((frames%12)===0)refreshAtmosphere();}
 function updateHud(){for(const id of ['hp','food','water']){$(id).textContent=Math.ceil(state[id]);$(id+'bar').style.width=clamp(state[id],0,100)+'%';$(id+'bar').style.background=id==='hp'?'#8ebe96':id==='food'?'#cfba75':'#7ac7cd';}$('ammo').innerHTML=(state.weapon==='pistol'?state.pistolAmmo:state.ammo)+' <small>/ '+(state.weapon==='pistol'?state.pistolReserve:state.reserve)+'</small>';$('kills').textContent=(state.weapon==='pistol'?'PISTOL':'RIFLE')+' · INFECTED '+state.kills+' · SUPPLIES '+state.found;$('clock').textContent='DAY '+(Math.floor(state.clock/1440)+1)+' / '+String(Math.floor(state.clock/60)%24).padStart(2,'0')+':'+String(Math.floor(state.clock%60)).padStart(2,'0');$('fps').textContent=(state.ads?'ADS':state.tps?'THIRD-PERSON':'FIRST-PERSON')+' · '+(state.crouched?'CROUCHING':state.scrap>=3?'BARRICADE READY':'SCAVENGE SUPPLIES');$('objective').textContent=state.found<5?'Find '+(5-state.found)+' more supply caches around the checkpoint.':state.kills<3?'Clear '+(3-state.kills)+' more infected and find a safe route.':'SECTOR 7 CLEAR · Keep surviving. Craft a barricade in your backpack.';syncUseButton();}
 function drawMap(){const w=180;map.clearRect(0,0,w,w);map.fillStyle='#152a25';map.fillRect(0,0,w,w);map.lineWidth=9;map.strokeStyle='#8c9380';const xx=90-state.x*1.3;map.beginPath();map.moveTo(xx,-10);map.lineTo(xx,w+10);map.stroke();const zz=90+(27-state.z)*1.3;map.lineWidth=7;map.beginPath();map.moveTo(-10,zz);map.lineTo(w+10,zz);map.stroke();function plot(x,z){return [90+(x-state.x)*1.3,90+(z-state.z)*1.3];}for(const h of houses){let [x,z]=plot(h.x,h.z);map.fillStyle='#bab39d';map.fillRect(x-h.w*.5,z-h.d*.5,h.w,h.d);}for(const l of loot){if(!l.ready)continue;let [x,z]=plot(l.x,l.z);map.fillStyle='#e7b76d';map.fillRect(x-2,z-2,4,4);}for(const e of infected){if(!e.alive||dist(e.x,e.z,state.x,state.z)>29)continue;let [x,z]=plot(e.x,e.z);map.fillStyle='#c97568';map.beginPath();map.arc(x,z,2.8,0,PI*2);map.fill();}map.save();map.translate(90,90);map.rotate(PI-state.yaw);map.fillStyle='#eff5e4';map.beginPath();map.moveTo(0, -10);map.lineTo(-7,7);map.lineTo(0,4);map.lineTo(7,7);map.closePath();map.fill();map.restore();map.strokeStyle='#ddd6bb99';map.lineWidth=2;map.strokeRect(1,1,w-2,w-2);}
 let last=performance.now();function loop(now){let dt=Math.min(.055,(now-last)/1000||0);last=now;requestAnimationFrame(loop);if(state.started&&!state.paused){update(dt);if(!state.paused)render();}else if(!state.started){render();}}requestAnimationFrame(loop);
