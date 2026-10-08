@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0a1415">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>DEAD ZONE | Sector 7 – Alpha 0.5</title>
+<title>DEAD ZONE | Sector 7 – Alpha 0.6</title>
 <style>
 :root{color-scheme:dark;--bone:#e9e4d4;--amber:#e2a764;--green:#81ae91;--bg:#101d1d;--safe-b:env(safe-area-inset-bottom,0px);--safe-t:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#071314;color:var(--bone);font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;touch-action:none;-webkit-user-select:none;user-select:none}button{cursor:pointer;border:0;font:inherit;color:inherit;-webkit-user-select:none;user-select:none;touch-action:none}canvas{display:block;touch-action:none}#view{position:fixed;inset:0;overflow:hidden;background:linear-gradient(#607981,#b4b5a6 45%,#484f42)}#view>canvas{height:100%!important;width:100%!important;object-fit:cover}
@@ -55,6 +55,17 @@ body.aiming #crosshair{transform:translate(-50%,-50%) scale(.64)}
 #threat.alert{color:#ffc68e;background:#4e291eb8}
 #threat.hunt{color:#ffe0d4;background:#912d25d4}
 #controlsMenu select{background:#1a3028;color:#ead7b5;border:1px solid #927e5b;border-radius:4px;padding:7px;margin-top:6px;width:100%;font-size:12px;touch-action:manipulation}
+
+#bag .panel{width:min(570px,96%)}#bag .bagGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+#packSummary{font-size:11px;color:#e1c595;margin:0 0 8px}
+#stashPanel{position:fixed;inset:0;z-index:29;display:none;align-items:center;justify-content:center;background:#081916ec;padding:14px}
+#stashPanel .panel{width:min(500px,96%);max-height:92dvh;overflow:auto;touch-action:pan-y;background:#172820;padding:16px;border:1px solid #b19b71;box-shadow:0 0 25px #000a}
+#stashList{display:grid;gap:6px;margin-top:10px}
+.stashRow{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:6px;padding:7px;background:#273a3180;border:1px solid #a39b7544}
+.stashRow span{font-size:11px;line-height:1.35}.stashRow button{font-size:10px;font-weight:850;color:#132118;background:#d5b37c;border:0;padding:8px;border-radius:4px;min-height:36px}
+.stashRow button:disabled{opacity:.3}
+#safehouseHint{position:absolute;top:calc(var(--safe-t) + 109px);left:50%;transform:translateX(-50%);font-size:10px;color:#f0ce91;text-shadow:0 1px 4px #000;white-space:nowrap}
+@media(max-height:450px){#safehouseHint{display:none}#stashPanel .panel{padding:10px}}
 </style>
 </head>
 <body>
@@ -67,24 +78,28 @@ body.aiming #crosshair{transform:translate(-50%,-50%) scale(.64)}
  <div id="crosshair"><i></i></div><div id="hit">×</div><div id="toast"></div><div id="near"></div>
  <div id="joyArea"><div id="joyBase"></div><div id="joyKnob"></div></div>
  <div id="buttons"><button id="fire" aria-label="Fire weapon">FIRE</button><button id="aim" aria-label="Aim down sights">ADS</button><button id="jump" aria-label="Jump">JUMP</button><button id="crouch" aria-label="Crouch">DUCK</button><button id="interact">USE</button><button id="sprint">RUN</button><button id="reload">RELOAD</button><button id="swap" aria-label="Swap weapon">SWAP</button><button id="camera">VIEW</button></div><button id="leftFire" aria-label="Fire weapon with left thumb">FIRE</button>
- <button id="inventory" class="hudBtn" aria-label="Open backpack">▣</button><button id="pause" class="hudBtn" aria-label="Pause">Ⅱ</button><button id="controlSettingsHud" aria-label="Touch control settings">⚙ HUD</button><button id="flashlight" class="hudBtn" aria-label="Toggle flashlight">LIGHT</button><div id="threat" aria-live="polite">UNDETECTED</div><div id="fps">FPS MODE · HOLD FIRE TO SHOOT</div>
+ <button id="inventory" class="hudBtn" aria-label="Open backpack">▣</button><button id="pause" class="hudBtn" aria-label="Pause">Ⅱ</button><button id="controlSettingsHud" aria-label="Touch control settings">⚙ HUD</button><button id="flashlight" class="hudBtn" aria-label="Toggle flashlight">LIGHT</button><div id="threat" aria-live="polite">UNDETECTED</div><div id="safehouseHint">SAFEHOUSE ▣  X −27 · Z −25</div><div id="fps">FPS MODE · HOLD FIRE TO SHOOT</div>
 </div>
 <div id="rotation">↻ Rotate your iPhone sideways for the best experience</div>
 <div id="menu"><div class="panel">
- <div class="eyebrow">SURVIVOR TRANSMISSION // 07</div><h1>DEAD <span>ZONE</span></h1><div class="eyebrow" style="margin-top:10px;color:#b9c7ba">ALPHA 0.5 · ASHWOOD JUNCTION</div>
+ <div class="eyebrow">SURVIVOR TRANSMISSION // 07</div><h1>DEAD <span>ZONE</span></h1><div class="eyebrow" style="margin-top:10px;color:#b9c7ba">ALPHA 0.6 · ASHWOOD JUNCTION</div>
  <p id="menuText">The evacuation failed. Search Ashwood Junction while infected patrol, investigate noise, and hunt survivors. Stay quiet, use your flashlight at night, and scavenge what you need.</p>
  <div id="features"><div>◉ Improved 3D lighting & textures</div><div>⌖ First / third-person shooting</div><div>▣ Inventory, crafting & saving</div><div>✚ Stealth AI, day/night & flashlight</div></div>
  <button class="wide" id="start">ENTER ASHWOOD →</button><button class="wide secondary" id="continue" style="display:none">CONTINUE SAVED SURVIVOR</button><button class="wide secondary" id="reset" style="display:none">NEW GAME / RESET</button><button class="wide secondary" id="controlSettings">CONTROLS & SENSITIVITY ⚙</button>
  <p class="fine">IPHONE: left joystick move · right side swipe aim · ADS/FIRE/JUMP/DUCK · crouch to stay quiet · sprinting and gunshots attract infected · LIGHT toggles flashlight · contextual USE near objects · ⚙ HUD adjusts control and graphics settings. Save is stored on this device only.</p>
  <p class="fine">Free WebGL 3D prototype. Three.js loads from a public CDN; game requires internet on first load. Optimized for mobile, but not yet console-grade visuals.</p>
 </div></div>
-<div id="bag"><div class="panel"><div class="eyebrow">FIELD PACK / CRAFTING</div><h1 style="font-size:36px">SURVIVOR <span>PACK</span></h1><p>Supplies and field crafting. Find loot crates around the settlement.</p><div class="bagGrid">
+<div id="bag"><div class="panel"><div class="eyebrow">FIELD PACK / CRAFTING</div><h1 style="font-size:36px">SURVIVOR <span>PACK</span></h1><p>Supplies and field crafting. Collect gear around town or store it at the safehouse.</p><div id="packSummary">Field pack: 0 / 36 slots</div><div class="bagGrid">
  <div class="slot">✚ <b>MEDKITS</b><div id="bagmed" class="hint"></div><button id="heal">USE MEDKIT</button></div>
  <div class="slot">▤ <b>SCRAP</b><div id="bagscrap" class="hint"></div><button id="build">CRAFT BARRICADE (3 SCRAP)</button></div>
  <div class="slot">◈ <b>FOOD</b><div id="bagfood" class="hint"></div><button id="eat">EAT RATION</button></div>
  <div class="slot">◆ <b>WATER</b><div id="bagwater" class="hint"></div><button id="drink">DRINK WATER</button></div>
+ <div class="slot">▧ <b>BANDAGES</b><div id="bagbandages" class="hint">0 available</div><button id="useBandage">APPLY BANDAGE</button></div>
+ <div class="slot">▤ <b>BATTERIES</b><div id="bagbatteries" class="hint">0 available</div><button id="useBattery">RECHARGE FLASHLIGHT</button></div>
+ <div class="slot" style="grid-column:1/-1">✴ <b>FLARES</b><div id="bagflares" class="hint">0 available</div><button id="useFlare">DEPLOY NOISE DECOY</button></div>
  <div class="slot" style="grid-column:1/-1">⌖ <b>WEAPONS</b><div id="bagweapon" class="hint">Rifle equipped · search for a sidearm</div><div class="weaponOptions"><button id="equipRifle">EQUIP RIFLE</button><button id="equipPistol" disabled>PISTOL LOCKED</button></div></div>
  </div><button class="wide" id="closeBag">RETURN TO GAME →</button></div></div>
+<div id="stashPanel"><div class="panel"><div class="eyebrow">ASHWOOD SAFEHOUSE / STORAGE</div><h1 style="font-size:32px">SUPPLY <span>LOCKER</span></h1><p class="fine">Deposit supplies before exploring. Stored items remain here after you rest or reopen the game.</p><div id="stashList"></div><button class="wide" id="closeStash">CLOSE LOCKER →</button></div></div>
 <div id="hudEditor"><div class="editorBar"><span>DRAG HUD BUTTONS</span><button id="resetHudPositions">RESET</button><button id="doneHudEditor">DONE</button></div></div>
 <div id="controlsMenu"><div class="panel"><div class="eyebrow">TACTICAL TOUCH LAYOUT</div><h1 style="font-size:36px">CONTROLS</h1>
 <p>Mobile-shooter touch layout. Left thumb moves; right-side swipes aim. Use Battery saver if your phone gets hot or the frame rate drops.</p>
@@ -110,7 +125,7 @@ function tex(type,w=256){const c=document.createElement('canvas');c.width=c.heig
 const tx={};for(const name of ['grass','dirt','road','concrete','plaster','brick','roof','rust','wood','bark','leaf'])tx[name]=tex(name);
 const mat=(color,opts={})=>new T.MeshStandardMaterial({color,roughness:.88,metalness:0,...opts});const mats={grass:mat(0xffffff,{map:tx.grass}),dirt:mat(0xffffff,{map:tx.dirt}),road:mat(0xffffff,{map:tx.road}),concrete:mat(0xffffff,{map:tx.concrete}),plaster:mat(0xffffff,{map:tx.plaster}),brick:mat(0xffffff,{map:tx.brick}),roof:mat(0xffffff,{map:tx.roof}),wood:mat(0xffffff,{map:tx.wood}),rust:mat(0xffffff,{map:tx.rust}),bark:mat(0xffffff,{map:tx.bark}),leaves:mat(0xffffff,{map:tx.leaf,side:T.DoubleSide}),glass:mat(0x526a70,{metalness:.15,roughness:.18,transparent:true,opacity:.78}),dark:mat(0x252a29,{roughness:.58}),black:mat(0x171a19,{roughness:.82}),metal:mat(0x777971,{roughness:.48,metalness:.55}),yellow:mat(0xe9ba7b,{roughness:.7}),paint:mat(0x6e756f,{roughness:.54,metalness:.18}),red:mat(0x75564c,{roughness:.7}),skin:mat(0xb69d85,{roughness:.95}),skinZombie:mat(0x788471,{roughness:1}),cloth:mat(0x49554c),pants:mat(0x393f3c)};
 const boxG=new T.BoxGeometry(1,1,1),sphereG=new T.SphereGeometry(1,12,8),cylinderG=new T.CylinderGeometry(1,1,1,9);
-const colliders=[],houses=[],doors=[],loot=[],infected=[],cars=[],pickups=[],barricades=[],fx=[];let seed=5512;function rnd(){seed=(Math.imul(1664525,seed)+1013904223)>>>0;return seed/4294967296;}function range(a,b){return a+(b-a)*rnd();}
+const colliders=[],houses=[],doors=[],loot=[],infected=[],cars=[],pickups=[],barricades=[],fx=[],containers=[],flares=[];let seed=5512;function rnd(){seed=(Math.imul(1664525,seed)+1013904223)>>>0;return seed/4294967296;}function range(a,b){return a+(b-a)*rnd();}
 function groundH(x,z){let rough=(Math.sin(x*.055)*.4+Math.cos(z*.047)*.42+Math.sin((x+z)*.03)*.34);let k=clamp((Math.abs(x)-23)/28,0,1);return rough*k;}
 function geom(g,m,x,y,z,scale,par=scene){let o=new T.Mesh(g,m);o.position.set(x,y,z);if(scale)o.scale.set(...scale);o.receiveShadow=true;o.castShadow=true;par.add(o);return o;}
 function cube(x,y,z,w,h,d,m,par=scene){return geom(boxG,m,x,y,z,[w,h,d],par)}
@@ -154,6 +169,17 @@ function house(cx,cz,w,d,kind=0,face=1){let g=new T.Group();g.position.set(cx,0,
  block(cx-w/2+th/2,cz,th,d);block(cx+w/2-th/2,cz,th,d);block(cx,cz-face*d/2+face*th/2,w,th);block(cx-(door+wing)/2,cz+face*(d/2-th/2),wing,th);block(cx+(door+wing)/2,cz+face*(d/2-th/2),wing,th);
  houses.push({x:cx,z:cz,w,d});return g;}
 house(-27,-25,12,12,0,1);house(27,-32,15,15,1,1);house(-26,16,16,13,2,-1);house(26,46,17,15,1,-1);house(-28,62,13,14,0,-1);house(29,-67,14,12,0,1);
+// Turn the first existing house into a recognizable shelter. No added draw-heavy buildings.
+const safehouse={x:-27,z:-25,rested:false};
+const houseBed={x:-29.7,z:-26.6},houseLocker={x:-24.7,z:-26.4};
+cube(-29.7,.38,-26.6,2.15,.74,1.15,mats.wood);cube(-29.7,.83,-26.6,1.86,.22,1.0,mats.plaster);
+cube(-24.7,.99,-26.4,1.1,1.95,.85,mats.metal);cube(-24.7,1.96,-26.4,1.22,.09,.94,mats.rust);
+cube(-24.24,1.09,-25.92,.08,.12,.09,mats.yellow);
+const shelterCanvas=document.createElement('canvas');shelterCanvas.width=256;shelterCanvas.height=64;
+const sh=shelterCanvas.getContext('2d');sh.fillStyle='#18392b';sh.fillRect(0,0,256,64);sh.strokeStyle='#e5c18a';sh.lineWidth=5;sh.strokeRect(2,2,252,60);
+sh.fillStyle='#efd3a1';sh.font='bold 30px sans-serif';sh.textAlign='center';sh.fillText('SAFEHOUSE',128,43);
+const shelterTex=new T.CanvasTexture(shelterCanvas);const shelterSign=new T.Mesh(new T.PlaneGeometry(4.6,1.1),new T.MeshBasicMaterial({map:shelterTex,side:T.DoubleSide}));
+shelterSign.position.set(-27,3.24,-18.84);scene.add(shelterSign);
 // Vehicles are layered with bodywork, glass, tyres, lamps, and grille.
 function vehicle(x,z,rot=0,type=0){let g=new T.Group();g.position.set(x,.05,z);g.rotation.y=rot;scene.add(g);const col=[mats.red,mats.paint,mats.rust][type%3];let h=groundH(x,z);cube(0,h+.8,0,2.15,.9,4.15,col,g);cube(0,h+1.52,-.3,1.83,.86,2.55,col,g);cube(0,h+1.58,.99,1.68,.76,.06,mats.glass,g);cube(0,h+1.57,-1.61,1.65,.76,.06,mats.glass,g);for(let a of [-1,1])for(let b of [-1,1]){const tyre=geom(new T.CylinderGeometry(.47,.47,.31,12),mats.black,a*1.1,h+.48,b*1.32,[1,1,1],g);tyre.rotation.z=PI/2;const hub=geom(new T.CylinderGeometry(.19,.19,.32,12),mats.metal,a*1.1,h+.48,b*1.32,[1,1,1],g);hub.rotation.z=PI/2;}
  for(let a of [-1,1]){cube(a*.74,h+.87,2.115,.32,.19,.075,mats.yellow,g);cube(a*.74,h+.87,-2.116,.29,.16,.075,mats.red,g);}cube(0,h+.72,2.13,1.3,.3,.09,mats.dark,g);cube(0,h+.31,-2.1,2.05,.16,.15,mats.metal,g);cube(0,h+2.02,-.7,1.75,.09,1.4,col,g);
@@ -169,7 +195,7 @@ for(let i=0;i<32;i++){let x=range(-67,67),z=range(-79,84);if(Math.abs(x)<7)conti
 const lamp=new T.PointLight(0xe6bb83,.9,17,2);lamp.position.set(-22,4.5,16);scene.add(lamp);
 // A collectable includes an amber beacon and several visible crate details.
 function makeLoot(x,z,type,id){let g=new T.Group();g.position.set(x,groundH(x,z),z);scene.add(g);cube(0,.43,0,1.05,.86,.9,type==='water'?mats.paint:type==='med'?mats.concrete:type==='scrap'?mats.rust:mats.wood,g);cube(0,.9,0,1.13,.1,1,mats.metal,g);cube(0,.45,.465,.66,.16,.04,type==='med'?mats.red:mats.yellow,g);let glow=orb(0,1.7,0,.18,mat(type==='med'?0xff8b79:type==='water'?0x80d3f6:0xf0c17c,{emissive:type==='med'?0x9b3932:0x856734,emissiveIntensity:.8}),g);glow.castShadow=false;let light=new T.PointLight(type==='med'?0xff9b7b:0xd3b276,.45,3);light.position.y=1.1;g.add(light);return {x,z,id,type,g,glow,light,ready:true};}
-const supplyPoints=[[-21,-25,'med'],[-27,-19,'food'],[-23,-29,'water'],[-18,16,'scrap'],[-24,22,'ammo'],[23,46,'water'],[29,43,'food'],[28,-29,'med'],[23,-38,'scrap'],[10,23,'ammo'],[-9,-17,'scrap'],[42,53,'food'],[-34,63,'water'],[33,-64,'ammo'],[-30,58,'scrap'],[15,-55,'food']];for(let i=0;i<supplyPoints.length;i++){let [x,z,t]=supplyPoints[i];loot.push(makeLoot(x,z,t,i));}
+const supplyPoints=[[-21,-25,'med'],[-27,-19,'food'],[-23,-29,'water'],[-18,16,'scrap'],[-24,22,'ammo'],[23,46,'water'],[29,43,'food'],[28,-29,'med'],[23,-38,'scrap'],[10,23,'ammo'],[-9,-17,'scrap'],[42,53,'food'],[-34,63,'water'],[33,-64,'ammo'],[-30,58,'scrap'],[15,-55,'food'],[-38,-27,'bandages'],[36,14,'batteries'],[-33,12,'flares'],[30,58,'bandages'],[15,-73,'batteries']];for(let i=0;i<supplyPoints.length;i++){let [x,z,t]=supplyPoints[i];loot.push(makeLoot(x,z,t,i));}
 // A real sidearm pickup. Once collected it is carried in the backpack and can be equipped.
  function sidearmShape(parent){const g=new T.Group();parent.add(g);cube(0,.05,0,.17,.18,.49,mats.dark,g);cube(0,.16,-.09,.18,.09,.4,mats.metal,g);cube(0,-.16,.16,.14,.3,.13,mats.black,g);cube(0,.06,-.35,.11,.12,.27,mats.metal,g);
 cube(0,.21,-.12,.08,.04,.47,mats.metal,g);
@@ -181,7 +207,23 @@ return g;}
  const beacon=orb(0,.95,0,.15,mat(0xf3d28a,{emissive:0x9b6939,emissiveIntensity:1}),g);beacon.castShadow=false;
  return {id:pickups.length,type:'pistol',x,z,g,beacon,collected:false};}
  pickups.push(makeWeaponPickup(-10,-9));
- // Human-like rig using joint pivots rather than stationary boxes; legs/arms animate.
+ // Searchable cabinets and desks use the same contextual interaction as cars and doors.
+function searchContainer(x,z,label,kind,item,qty=1){
+ const g=new T.Group();g.position.set(x,groundH(x,z),z);scene.add(g);
+ cube(0,.75,0,1.35,1.5,.68,kind==='clinic'?mats.concrete:kind==='garage'?mats.metal:mats.wood,g);
+ cube(0,1.5,0,1.45,.1,.76,mats.rust,g);cube(0,.85,.38,.87,.08,.07,mats.metal,g);
+ const light=orb(0,1.84,0,.12,mat(0xe8be79,{emissive:0x735426,emissiveIntensity:.8}),g);light.castShadow=false;
+ containers.push({id:containers.length,x,z,label,kind,item,qty,searched:false,g});
+}
+searchContainer(26,-30,'CLINIC CABINET','clinic','bandages',2);
+searchContainer(31,-34,'MEDICAL SHELF','clinic','med',1);
+searchContainer(-24,19,'OFFICE DESK','office','batteries',2);
+searchContainer(-29,13,'WORKROOM CABINET','office','flares',2);
+searchContainer(24,44,'GARAGE TOOLBOX','garage','scrap',4);
+searchContainer(29,50,'GARAGE LOCKER','garage','batteries',1);
+searchContainer(-27,61,'PANTRY CUPBOARD','house','rations',2);
+searchContainer(30,-69,'KITCHEN CUPBOARD','house','bottles',2);
+// Human-like rig using joint pivots rather than stationary boxes; legs/arms animate.
 function human(g,zombie=false){let root=new T.Group(),cloth=zombie?mats.red:mats.cloth,skin=zombie?mats.skinZombie:mats.skin,legmat=zombie?mats.pants:mats.dark;g.add(root);cube(0,1.62,0,.67,.9,.42,cloth,root);cube(0,1.85,-.27,.65,.62,.12,zombie?mats.rust:mats.dark,root);const neck=cyl(0,2.14,0,.13,.22,skin,root);let head=orb(0,2.43,0,.28,skin,root);head.scale.set(.95,1.17,.84);for(let x of [-.11,.11])orb(x,2.46,.25,.043,mats.black,root);if(!zombie){
  cube(0,2.65,0,.67,.21,.55,mats.dark,root);cube(0,1.43,-.31,.78,.47,.17,mats.black,root);
  cube(0,1.69,.27,.53,.56,.1,mats.dark,root);cube(0,1.77,.335,.42,.18,.06,mats.metal,root);
@@ -216,7 +258,7 @@ const muzzlePistol=new T.Mesh(new T.ConeGeometry(.11,.35,6),muzzleMat);
 muzzlePistol.rotation.x=-PI/2;muzzlePistol.position.set(0,.065,-.54);sidearmGun.add(muzzlePistol);
 const emberMat=new T.MeshBasicMaterial({color:0xf5aa68,transparent:true,opacity:.82});
 let skyTime=0;
-let state={x:-4,z:-5,yaw:-.2,pitch:-.035,tps:false,hp:100,food:80,water:80,ammo:20,reserve:80,mag:20,kills:0,found:0,med:1,scrap:0,rations:1,bottles:1,time:0,clock:375,stamina:100,started:false,paused:true,dead:false,shotAt:-1,flash:0,damage:0,toastUntil:0,auto:0,weapon:'rifle',hasPistol:false,pistolAmmo:12,pistolReserve:20,ads:false,crouched:false,jumpY:0,jumpVel:0,grounded:true,hitFlash:0,shotCount:0,flashlight:false};let joy={id:null,x:0,y:0},look={id:null,x:0,y:0},actions={fire:false,run:false},keys={},near=null,elapsed=0,frames=0,sway=0,recoil=0,adsBlend=0;
+let state={x:-4,z:-5,yaw:-.2,pitch:-.035,tps:false,hp:100,food:80,water:80,ammo:20,reserve:80,mag:20,kills:0,found:0,med:1,scrap:0,rations:1,bottles:1,time:0,clock:375,stamina:100,started:false,paused:true,dead:false,shotAt:-1,flash:0,damage:0,toastUntil:0,auto:0,weapon:'rifle',hasPistol:false,pistolAmmo:12,pistolReserve:20,ads:false,crouched:false,jumpY:0,jumpVel:0,grounded:true,hitFlash:0,shotCount:0,flashlight:false,bandages:1,batteries:1,flares:0,batteryCharge:100,bleeding:0,safehouseRested:false};let joy={id:null,x:0,y:0},look={id:null,x:0,y:0},actions={fire:false,run:false},keys={},near=null,elapsed=0,frames=0,sway=0,recoil=0,adsBlend=0;
 const fireTouches=new Set(),DEFAULT_CONTROLS={look:100,ads:70,leftFire:false,autoSprint:true,invertY:false,graphics:'balanced',positions:{}};let controlOptions={...DEFAULT_CONTROLS};
 try{let savedControls=JSON.parse(localStorage.getItem('deadzone_controls_v1')||'null');if(savedControls&&typeof savedControls==='object')controlOptions={...controlOptions,...savedControls};}catch(_){}
 function saveControlOptions(){try{localStorage.setItem('deadzone_controls_v1',JSON.stringify(controlOptions));}catch(_){}}
