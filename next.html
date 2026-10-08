@@ -75,7 +75,7 @@ body.aiming #crosshair{transform:translate(-50%,-50%) scale(.64)}
  <p id="menuText">The evacuation failed. Search Ashwood Junction while infected patrol, investigate noise, and hunt survivors. Stay quiet, use your flashlight at night, and scavenge what you need.</p>
  <div id="features"><div>◉ Improved 3D lighting & textures</div><div>⌖ First / third-person shooting</div><div>▣ Inventory, crafting & saving</div><div>✚ Stealth AI, day/night & flashlight</div></div>
  <button class="wide" id="start">ENTER ASHWOOD →</button><button class="wide secondary" id="continue" style="display:none">CONTINUE SAVED SURVIVOR</button><button class="wide secondary" id="reset" style="display:none">NEW GAME / RESET</button><button class="wide secondary" id="controlSettings">CONTROLS & SENSITIVITY ⚙</button>
- <p class="fine">IPHONE: left thumb move · drag right screen to aim · FIRE to shoot · USE appears near objects · ADS, JUMP, DUCK, SWAP, and HUD sensitivity settings · VIEW to switch camera · RUN to sprint · backpack to craft and heal. Save is stored on this device only.</p>
+ <p class="fine">IPHONE: left joystick move · right side swipe aim · ADS/FIRE/JUMP/DUCK · crouch to stay quiet · sprinting and gunshots attract infected · LIGHT toggles flashlight · contextual USE near objects · ⚙ HUD adjusts control and graphics settings. Save is stored on this device only.</p>
  <p class="fine">Free WebGL 3D prototype. Three.js loads from a public CDN; game requires internet on first load. Optimized for mobile, but not yet console-grade visuals.</p>
 </div></div>
 <div id="bag"><div class="panel"><div class="eyebrow">FIELD PACK / CRAFTING</div><h1 style="font-size:36px">SURVIVOR <span>PACK</span></h1><p>Supplies and field crafting. Find loot crates around the settlement.</p><div class="bagGrid">
@@ -193,7 +193,7 @@ function human(g,zombie=false){let root=new T.Group(),cloth=zombie?mats.red:mats
  cube(-.2,1.53,.218,.16,.4,.045,mats.rust,root);
  cube(.19,1.81,.23,.14,.22,.06,mats.black,root);
  }const arms=[],legs=[];for(let s of [-1,1]){let a=new T.Group();a.position.set(s*.46,1.98,0);root.add(a);cube(s*.01,-.38,0,.23,.76,.26,cloth,a);orb(s*.01,-.78,0,.11,skin,a);arms.push(a);let l=new T.Group();l.position.set(s*.21,1.14,0);root.add(l);cube(0,-.48,0,.29,.93,.32,legmat,l);cube(0,-.94,.16,.34,.2,.48,mats.black,l);if(!zombie){cube(0,-.51,.19,.30,.20,.09,mats.black,l);cube(0,-.72,-.16,.27,.26,.06,mats.metal,l);}legs.push(l);}return {root,arms,legs,head};}
-function spawnInfected(x,z,i){let g=new T.Group();scene.add(g);let rig=human(g,true);g.position.set(x,groundH(x,z),z);return {g,rig,x,z,homeX:x,homeZ:z,hp:95,alive:true,respawn:0,phase:i*1.3,attack:0,speed:range(.92,1.44),yaw:0,flinch:0,ai:'patrol',alertTimer:0,searchTimer:0,patrolTimer:0,goalX:x,goalZ:z,patrolPhase:i*1.4};}
+function spawnInfected(x,z,i){let g=new T.Group();scene.add(g);let rig=human(g,true);g.position.set(x,groundH(x,z),z);return {g,rig,x,z,homeX:x,homeZ:z,hp:95,alive:true,respawn:0,phase:i*1.3,attack:0,speed:range(.92,1.44),yaw:0,flinch:0,ai:'patrol',alertTimer:0,searchTimer:0,patrolTimer:0,goalX:x,goalZ:z,patrolPhase:i*1.4,senseTimer:0,seenX:x,seenZ:z};}
 for(let i=0;i<8;i++){let [x,z]=[[11,20],[-28,-5],[21,59],[-33,-46],[40,-15],[-36,36],[17,-62],[55,42]][i];infected.push(spawnInfected(x,z,i));}
 const avatar=new T.Group();const soldier=human(avatar,false);scene.add(avatar);const fpGun=new T.Group();camera.add(fpGun);scene.add(camera);
 const torch=new T.SpotLight(0xf4ebcf,3,23,PI/5,.48,1.4);
@@ -298,7 +298,7 @@ $('graphicsPreset').addEventListener('change',()=>{controlOptions.graphics=$('gr
 applyGraphicsMode();
 $('controlSettings').addEventListener('click',openControlSettings);$('controlSettingsHud').addEventListener('click',openControlSettings);$('closeControls').addEventListener('click',closeControlSettings);
 $('resetControls').addEventListener('click',()=>{controlOptions={...DEFAULT_CONTROLS,positions:{}};displayControls();applyHudPositions();applyGraphicsMode();saveControlOptions();});displayControls();applyHudPositions();
-let noisePulse=null,lastStepPulse=-10,threatMode='quiet';
+let noisePulse=null,lastStepPulse=-10,lastAlertToast=-10,threatMode='quiet';
 function emitNoise(x,z,radius,life=.45){noisePulse={x,z,radius,until:elapsed+life};}
 function daylightAt(clock){const hour=(((clock%1440)+1440)%1440)/60;return clamp((Math.sin((hour-6)*PI/12)+.18)*1.25,.09,1);}
 function refreshAtmosphere(){
@@ -418,7 +418,7 @@ function drink(){if(state.bottles<1||state.water>=100)return;state.bottles--;sta
 function buildBarricade(){if(state.scrap<3)return;let x=state.x+Math.sin(state.yaw)*3,z=state.z+Math.cos(state.yaw)*3;if(collides(x,z,1.1)){showToast('Not enough space to build');return;}state.scrap-=3;createBarricade(x,z,state.yaw);showToast('BARRICADE BUILT');bagUpdate();save(false);}
 function createBarricade(x,z,a=0){let g=new T.Group();g.position.set(x,groundH(x,z),z);g.rotation.y=a;scene.add(g);for(let i=0;i<3;i++){const plank=cube(0,.48+i*.42,0,3,.29,.24,mats.wood,g);plank.rotation.z=(i-1)*.09;}cube(-1.25,.8,.1,.19,1.7,.23,mats.metal,g);cube(1.25,.8,.1,.19,1.7,.23,mats.metal,g);barricades.push({x,z,w:3,d:.8,a,g});}
 function save(notify=true){try{localStorage.setItem(SAVE,JSON.stringify({v:2,state:{...state,started:undefined,paused:undefined,dead:undefined,auto:undefined},collected:loot.filter(l=>!l.ready).map(l=>l.id),openDoors:doors.filter(d=>d.open).map(d=>d.id),searchedCars:cars.filter(c=>c.searched).map(c=>c.id),pickedWeapons:pickups.filter(w=>w.collected).map(w=>w.id),barricades:barricades.map(b=>({x:b.x,z:b.z,a:b.a}))}));if(notify)showToast('PROGRESS SAVED');return true;}catch(_){if(notify)showToast('Browser storage unavailable');return false;}}
-function restore(){if(!saved)return;state={...state,...saved.state,started:false,paused:true,dead:false};state.hp=Math.max(1,state.hp);state.jumpY=0;state.jumpVel=0;state.grounded=true;state.ads=false;if(Array.isArray(saved.collected))for(const i of saved.collected){if(loot[i]){loot[i].ready=false;loot[i].g.visible=false;}}if(Array.isArray(saved.openDoors))for(const i of saved.openDoors){const d=doors[i];if(d){d.open=true;d.hinge.rotation.y=d.face*PI*.49;}}
+function restore(){if(!saved)return;state={...state,...saved.state,started:false,paused:true,dead:false};state.hp=Math.max(1,state.hp);state.jumpY=0;state.jumpVel=0;state.grounded=true;state.ads=false;if(typeof state.flashlight!=='boolean')state.flashlight=false;if(Array.isArray(saved.collected))for(const i of saved.collected){if(loot[i]){loot[i].ready=false;loot[i].g.visible=false;}}if(Array.isArray(saved.openDoors))for(const i of saved.openDoors){const d=doors[i];if(d){d.open=true;d.hinge.rotation.y=d.face*PI*.49;}}
  if(Array.isArray(saved.searchedCars))for(const i of saved.searchedCars){const c=cars[i];if(c){c.searched=true;c.hatch.rotation.x=-1.05;}}
  if(Array.isArray(saved.pickedWeapons))for(const i of saved.pickedWeapons){const w=pickups[i];if(w){w.collected=true;w.g.visible=false;}}
  if(state.hasPistol){const w=pickups.find(w=>w.type==='pistol');if(w){w.collected=true;w.g.visible=false;}}
@@ -464,15 +464,55 @@ function update(dt){elapsed+=dt;state.time+=dt;state.clock+=dt*7;state.damage=Ma
  if(!state.grounded){state.jumpVel-=16.5*dt;state.jumpY+=state.jumpVel*dt;
  if(state.jumpY<=0){state.jumpY=0;state.jumpVel=0;state.grounded=true;}}
  let x=joy.x,z=-joy.y;if(keys.KeyW||keys.ArrowUp)z++;if(keys.KeyS||keys.ArrowDown)z--;if(keys.KeyA||keys.ArrowLeft)x--;if(keys.KeyD||keys.ArrowRight)x++;let length=Math.hypot(x,z);if(length>1){x/=length;z/=length;}let run=(actions.run||keys.ShiftLeft||keys.ShiftRight||(controlOptions.autoSprint&&joy.y<-.96&&Math.abs(joy.x)<.55))&&state.stamina>0&&!state.crouched&&!state.ads;
- let sp=state.crouched?2.5:state.ads?3.15:run?7.8:4.7;if(length>.07){move((Math.sin(state.yaw)*z-Math.cos(state.yaw)*x)*sp*dt,(Math.cos(state.yaw)*z+Math.sin(state.yaw)*x)*sp*dt);sway+=dt*(state.crouched?4:run?12:8);}if(run&&length>.1)state.stamina=Math.max(0,state.stamina-dt*13);else state.stamina=clamp(state.stamina+dt*9,0,100);
+ let sp=state.crouched?2.5:state.ads?3.15:run?7.8:4.7;if(length>.07){move((Math.sin(state.yaw)*z-Math.cos(state.yaw)*x)*sp*dt,(Math.cos(state.yaw)*z+Math.sin(state.yaw)*x)*sp*dt);sway+=dt*(state.crouched?4:run?12:8);
+const cadence=state.crouched?.82:run?.32:.58;if(elapsed-lastStepPulse>cadence){lastStepPulse=elapsed;emitNoise(state.x,state.z,state.crouched?1.9:run?11:5.4,.2);}}if(run&&length>.1)state.stamina=Math.max(0,state.stamina-dt*13);else state.stamina=clamp(state.stamina+dt*9,0,100);
  if(actions.fire)fire();state.food=Math.max(0,state.food-dt*.027);state.water=Math.max(0,state.water-dt*.045);if(state.food<=0||state.water<=0)state.hp-=dt*1.6;
- for(const e of infected){if(!e.alive){e.respawn-=dt;if(e.respawn<=0){e.alive=true;e.hp=95;e.x=e.homeX;e.z=e.homeZ;e.g.visible=true;}continue;}let d=dist(e.x,e.z,state.x,state.z);if(d<24&&d>1.65){let vx=(state.x-e.x)/d,vz=(state.z-e.z)/d,nx=e.x+vx*e.speed*dt,nz=e.z+vz*e.speed*dt;if(!collides(nx,e.z,.3))e.x=nx;if(!collides(e.x,nz,.3))e.z=nz;e.yaw=Math.atan2(vx,vz);}else if(d>36){e.yaw+=dt*.14;}e.g.position.set(e.x,groundH(e.x,e.z),e.z);e.g.rotation.y=e.yaw;e.flinch=Math.max(0,e.flinch-dt);
- e.rig.root.rotation.z=Math.sin((.22-e.flinch)*21)*e.flinch*.8;
- let movement=d<24?1:0;e.rig.arms[0].rotation.x=Math.sin(elapsed*6+e.phase)*.5*movement-.5;e.rig.arms[1].rotation.x=-Math.sin(elapsed*6+e.phase)*.5*movement-.5;for(let j=0;j<2;j++)e.rig.legs[j].rotation.x=Math.sin(elapsed*6+e.phase+j*PI)*.42*movement;e.attack-=dt;if(d<1.8&&e.attack<=0){e.attack=1.3;state.hp-=8;state.damage=.8;showToast('INFECTED ATTACK · MOVE AWAY',.65);audio(78,.15);}}
+ // Stealth-state infected: wander, investigate sound, chase visible survivors.
+ for(const e of infected){
+  if(!e.alive){e.respawn-=dt;if(e.respawn<=0){e.alive=true;e.hp=95;e.x=e.homeX;e.z=e.homeZ;e.g.visible=true;e.ai='patrol';e.alertTimer=0;e.searchTimer=0;e.patrolTimer=0;e.senseTimer=0;}continue;}
+  const d=dist(e.x,e.z,state.x,state.z),oldMode=e.ai;
+  e.senseTimer-=dt;e.alertTimer=Math.max(0,e.alertTimer-dt);e.searchTimer=Math.max(0,e.searchTimer-dt);e.patrolTimer-=dt;e.attack-=dt;
+  if(e.senseTimer<=0){
+   e.senseTimer=.20+e.phase*.007;
+   const range=(state.crouched?8:state.grounded?19:23)*(.60+.40*daylight)+(state.flashlight?12:0);
+   const angle=Math.atan2(state.x-e.x,state.z-e.z);
+   const facing=Math.abs(Math.atan2(Math.sin(angle-e.yaw),Math.cos(angle-e.yaw)));
+   const seen=d<range&&(d<4.5||facing<1.65)&&!shotBlocked(e.x,e.z);
+   if(seen){e.ai='chase';e.alertTimer=5.5;e.seenX=state.x;e.seenZ=state.z;}
+   else if(e.ai==='chase'&&e.alertTimer===0){e.ai='investigate';e.searchTimer=5;e.goalX=e.seenX;e.goalZ=e.seenZ;}
+   if(noisePulse&&noisePulse.until>elapsed&&dist(e.x,e.z,noisePulse.x,noisePulse.z)<noisePulse.radius&&e.ai!=='chase'){
+    e.ai='investigate';e.searchTimer=Math.max(e.searchTimer,4.7);e.goalX=noisePulse.x;e.goalZ=noisePulse.z;
+   }
+  }
+  if(e.ai==='investigate'&&e.searchTimer<=0)e.ai='patrol';
+  if(e.ai==='patrol'&&e.patrolTimer<=0){
+   const phase=elapsed*.12+e.patrolPhase,rad=6+2*Math.sin(phase*.5);
+   e.goalX=e.homeX+Math.sin(phase+e.phase)*rad;e.goalZ=e.homeZ+Math.cos(phase*.77+e.phase)*rad;
+   e.patrolTimer=3+Math.abs(Math.sin(e.phase+elapsed))*.9;
+  }
+  const destX=e.ai==='chase'?state.x:e.goalX,destZ=e.ai==='chase'?state.z:e.goalZ;
+  const travel=dist(e.x,e.z,destX,destZ),moving=travel>.7&&!(e.ai==='chase'&&d<1.48);
+  const speed=e.ai==='chase'?e.speed*2.1:e.ai==='investigate'?e.speed*.95:e.speed*.55;
+  if(moving){
+   const vx=(destX-e.x)/travel,vz=(destZ-e.z)/travel,step=Math.min(speed*dt,travel);
+   tryInfectedStep(e,vx*step,vz*step);
+   const desired=Math.atan2(vx,vz),turn=Math.atan2(Math.sin(desired-e.yaw),Math.cos(desired-e.yaw));
+   e.yaw+=turn*Math.min(1,dt*6);
+  }
+  if(e.ai==='investigate'&&travel<1.2)e.searchTimer=Math.min(e.searchTimer,1.8);
+  e.g.position.set(e.x,groundH(e.x,e.z),e.z);e.g.rotation.y=e.yaw;
+  e.flinch=Math.max(0,e.flinch-dt);e.rig.root.rotation.z=Math.sin((.22-e.flinch)*21)*e.flinch*.8;
+  const rate=moving?(e.ai==='chase'?9:e.ai==='investigate'?5:3):0;
+  e.rig.arms[0].rotation.x=Math.sin(elapsed*rate+e.phase)*.5-(e.ai==='chase'?.55:.37);
+  e.rig.arms[1].rotation.x=-Math.sin(elapsed*rate+e.phase)*.5-(e.ai==='chase'?.55:.37);
+  for(let j=0;j<2;j++)e.rig.legs[j].rotation.x=Math.sin(elapsed*rate+e.phase+j*PI)*.42;
+  if(d<1.8&&e.attack<=0){e.ai='chase';e.alertTimer=5.5;e.attack=1.3;state.hp-=8;state.damage=.8;showToast('INFECTED ATTACK · EVADE',.65);audio(78,.15);}
+  if(oldMode!==e.ai&&e.ai==='chase'&&d<19&&elapsed-lastAlertToast>2.5){lastAlertToast=elapsed;showToast('INFECTED SPOTTED YOU!',.8);}
+ }
  for(const l of loot)if(l.ready){l.glow.position.y=1.7+Math.sin(elapsed*2+l.id)*.19;l.glow.rotation.y+=dt*.6;}for(const o of fx){o.ttl-=dt;if(o.ttl<=0){scene.remove(o.mesh);o.mesh.geometry.dispose();fx.splice(fx.indexOf(o),1);}}
  if(state.hp<=0){state.hp=0;state.dead=true;showMenu('dead');return;}state.auto+=dt;if(state.auto>20){state.auto=0;save(false);}if(state.toastUntil<elapsed)$('toast').style.opacity='0';$('blood').style.opacity=state.damage*.9;$('hit').style.opacity=state.hitFlash>0?.9:0;
  if((frames++%8)===0){updateHud();drawMap();updateThreatDisplay();}if((frames%12)===0)refreshAtmosphere();}
-function updateHud(){for(const id of ['hp','food','water']){$(id).textContent=Math.ceil(state[id]);$(id+'bar').style.width=clamp(state[id],0,100)+'%';$(id+'bar').style.background=id==='hp'?'#8ebe96':id==='food'?'#cfba75':'#7ac7cd';}$('ammo').innerHTML=(state.weapon==='pistol'?state.pistolAmmo:state.ammo)+' <small>/ '+(state.weapon==='pistol'?state.pistolReserve:state.reserve)+'</small>';$('kills').textContent=(state.weapon==='pistol'?'PISTOL':'RIFLE')+' · INFECTED '+state.kills+' · SUPPLIES '+state.found;$('clock').textContent='DAY '+(Math.floor(state.clock/1440)+1)+' / '+String(Math.floor(state.clock/60)%24).padStart(2,'0')+':'+String(Math.floor(state.clock%60)).padStart(2,'0');$('fps').textContent=(state.ads?'ADS':state.tps?'THIRD-PERSON':'FIRST-PERSON')+' · '+(state.crouched?'CROUCHING':state.scrap>=3?'BARRICADE READY':'SCAVENGE SUPPLIES');$('objective').textContent=state.found<5?'Find '+(5-state.found)+' more supply caches around the checkpoint.':state.kills<3?'Clear '+(3-state.kills)+' more infected and find a safe route.':'SECTOR 7 CLEAR · Keep surviving. Craft a barricade in your backpack.';syncUseButton();}
+function updateHud(){for(const id of ['hp','food','water']){$(id).textContent=Math.ceil(state[id]);$(id+'bar').style.width=clamp(state[id],0,100)+'%';$(id+'bar').style.background=id==='hp'?'#8ebe96':id==='food'?'#cfba75':'#7ac7cd';}$('ammo').innerHTML=(state.weapon==='pistol'?state.pistolAmmo:state.ammo)+' <small>/ '+(state.weapon==='pistol'?state.pistolReserve:state.reserve)+'</small>';$('kills').textContent=(state.weapon==='pistol'?'PISTOL':'RIFLE')+' · INFECTED '+state.kills+' · SUPPLIES '+state.found;$('clock').textContent='DAY '+(Math.floor(state.clock/1440)+1)+' / '+String(Math.floor(state.clock/60)%24).padStart(2,'0')+':'+String(Math.floor(state.clock%60)).padStart(2,'0');$('fps').textContent=(state.ads?'ADS':state.tps?'THIRD-PERSON':'FIRST-PERSON')+' · '+(state.water<20?'LOW WATER':state.food<20?'LOW FOOD':state.crouched?'STEALTH / CROUCHING':state.scrap>=3?'BARRICADE READY':'SCAVENGE SUPPLIES');$('objective').textContent=state.found<5?'Find '+(5-state.found)+' more supply caches around the checkpoint.':state.kills<3?'Clear '+(3-state.kills)+' more infected and find a safe route.':'SECTOR 7 CLEAR · Keep surviving. Craft a barricade in your backpack.';syncUseButton();}
 function drawMap(){const w=180;map.clearRect(0,0,w,w);map.fillStyle='#152a25';map.fillRect(0,0,w,w);map.lineWidth=9;map.strokeStyle='#8c9380';const xx=90-state.x*1.3;map.beginPath();map.moveTo(xx,-10);map.lineTo(xx,w+10);map.stroke();const zz=90+(27-state.z)*1.3;map.lineWidth=7;map.beginPath();map.moveTo(-10,zz);map.lineTo(w+10,zz);map.stroke();function plot(x,z){return [90+(x-state.x)*1.3,90+(z-state.z)*1.3];}for(const h of houses){let [x,z]=plot(h.x,h.z);map.fillStyle='#bab39d';map.fillRect(x-h.w*.5,z-h.d*.5,h.w,h.d);}for(const l of loot){if(!l.ready)continue;let [x,z]=plot(l.x,l.z);map.fillStyle='#e7b76d';map.fillRect(x-2,z-2,4,4);}for(const e of infected){if(!e.alive||dist(e.x,e.z,state.x,state.z)>29)continue;let [x,z]=plot(e.x,e.z);map.fillStyle='#c97568';map.beginPath();map.arc(x,z,2.8,0,PI*2);map.fill();}map.save();map.translate(90,90);map.rotate(PI-state.yaw);map.fillStyle='#eff5e4';map.beginPath();map.moveTo(0, -10);map.lineTo(-7,7);map.lineTo(0,4);map.lineTo(7,7);map.closePath();map.fill();map.restore();map.strokeStyle='#ddd6bb99';map.lineWidth=2;map.strokeRect(1,1,w-2,w-2);}
 let last=performance.now();function loop(now){let dt=Math.min(.055,(now-last)/1000||0);last=now;requestAnimationFrame(loop);if(state.started&&!state.paused){update(dt);if(!state.paused)render();}else if(!state.started){render();}}requestAnimationFrame(loop);
 })();
