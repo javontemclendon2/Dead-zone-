@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0a1415">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>DEAD ZONE | Sector 7 – Alpha 0.6</title>
+<title>DEAD ZONE | Sector 7 – Alpha 0.6.1</title>
 <style>
 :root{color-scheme:dark;--bone:#e9e4d4;--amber:#e2a764;--green:#81ae91;--bg:#101d1d;--safe-b:env(safe-area-inset-bottom,0px);--safe-t:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#071314;color:var(--bone);font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;touch-action:none;-webkit-user-select:none;user-select:none}button{cursor:pointer;border:0;font:inherit;color:inherit;-webkit-user-select:none;user-select:none;touch-action:none}canvas{display:block;touch-action:none}#view{position:fixed;inset:0;overflow:hidden;background:linear-gradient(#607981,#b4b5a6 45%,#484f42)}#view>canvas{height:100%!important;width:100%!important;object-fit:cover}
@@ -82,12 +82,12 @@ body.aiming #crosshair{transform:translate(-50%,-50%) scale(.64)}
 </div>
 <div id="rotation">↻ Rotate your iPhone sideways for the best experience</div>
 <div id="menu"><div class="panel">
- <div class="eyebrow">SURVIVOR TRANSMISSION // 07</div><h1>DEAD <span>ZONE</span></h1><div class="eyebrow" style="margin-top:10px;color:#b9c7ba">ALPHA 0.6 · ASHWOOD JUNCTION</div>
- <p id="menuText">The evacuation failed. Search Ashwood Junction while infected patrol, investigate noise, and hunt survivors. Stay quiet, use your flashlight at night, and scavenge what you need.</p>
- <div id="features"><div>◉ Improved 3D lighting & textures</div><div>⌖ First / third-person shooting</div><div>▣ Safehouse, stash & equipment</div><div>✚ Stealth AI, day/night & flashlight</div></div>
+ <div class="eyebrow">SURVIVOR TRANSMISSION // 07</div><h1>DEAD <span>ZONE</span></h1><div class="eyebrow" style="margin-top:10px;color:#b9c7ba">ALPHA 0.6.1 · ASHWOOD JUNCTION</div>
+ <p id="menuText">The evacuation failed. Explore the weathered streets of Ashwood Junction while infected patrol, investigate noise, and hunt survivors. Stay quiet, use your flashlight at night, and scavenge what you need.</p>
+ <div id="features"><div>◉ Scanned surfaces & layered foliage</div><div>⌖ First / third-person shooting</div><div>▣ Safehouse, stash & equipment</div><div>✚ Stealth AI, day/night & flashlight</div></div>
  <button class="wide" id="start">ENTER ASHWOOD →</button><button class="wide secondary" id="continue" style="display:none">CONTINUE SAVED SURVIVOR</button><button class="wide secondary" id="reset" style="display:none">NEW GAME / RESET</button><button class="wide secondary" id="controlSettings">CONTROLS & SENSITIVITY ⚙</button>
  <p class="fine">IPHONE: left joystick move · right side swipe aim · ADS/FIRE/JUMP/DUCK · crouch to stay quiet · sprinting and gunshots attract infected · LIGHT toggles flashlight · contextual USE near objects · ⚙ HUD adjusts control and graphics settings. Save is stored on this device only.</p>
- <p class="fine">Free WebGL 3D prototype. Three.js loads from a public CDN; game requires internet on first load. Optimized for mobile, but not yet console-grade visuals.</p>
+ <p class="fine">Alpha 0.6.1 graphics pass. Real surface scans, weathered buildings and a rebuilt weapon view. Mobile WebGL prototype; visuals are still in development. Your 0.6 save and control layout carry forward.</p>
 </div></div>
 <div id="bag"><div class="panel"><div class="eyebrow">FIELD PACK / CRAFTING</div><h1 style="font-size:36px">SURVIVOR <span>PACK</span></h1><p>Supplies and field crafting. Collect gear around town or store it at the safehouse.</p><div id="packSummary">Field pack: 0 / 36 slots</div><div class="bagGrid">
  <div class="slot">✚ <b>MEDKITS</b><div id="bagmed" class="hint"></div><button id="heal">USE MEDKIT</button></div>
@@ -110,7 +110,8 @@ body.aiming #crosshair{transform:translate(-50%,-50%) scale(.64)}
 <label for="invertY">Invert vertical aim <input id="invertY" type="checkbox"></label><label for="graphicsPreset">iPhone graphics quality</label><select id="graphicsPreset"><option value="balanced">Balanced</option><option value="low">Battery saver</option><option value="high">Higher detail</option></select>
 <button class="wide secondary" id="editHud">CUSTOMIZE HUD POSITIONS ✥</button><button class="wide" id="closeControls">SAVE & RETURN →</button><button class="wide secondary" id="resetControls">RESTORE DEFAULT CONTROLS</button>
 </div></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="vendor/three-r128.min.js"></script>
+<script src="visuals.js?v=061"></script>
 <script>
 (()=>{'use strict';
 const $=id=>document.getElementById(id),PI=Math.PI,clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),dist=(a,b,c,d)=>Math.hypot(a-c,b-d),lerp=(a,b,t)=>a+(b-a)*t;
@@ -122,7 +123,7 @@ function resize(){let w=innerWidth,h=innerHeight;if(w===renderWidth&&h===renderH
 const hemiLight=new T.HemisphereLight(0xc9d8e0,0x3c3927,1.65);scene.add(hemiLight);const sun=new T.DirectionalLight(0xffdfb1,2.25);sun.position.set(-55,88,-32);sun.castShadow=true;sun.shadow.mapSize.set(mobile?1024:2048,mobile?1024:2048);sun.shadow.camera.left=-80;sun.shadow.camera.right=80;sun.shadow.camera.top=80;sun.shadow.camera.bottom=-80;sun.shadow.camera.near=5;sun.shadow.camera.far=220;sun.shadow.bias=-.0004;sun.shadow.normalBias=.035;sun.target.position.set(0,0,0);scene.add(sun,sun.target);
 // Procedural diffuse maps keep this build asset-free while adding surface variation.
 function tex(type,w=256){const c=document.createElement('canvas');c.width=c.height=w;const g=c.getContext('2d'),im=g.createImageData(w,w),base={grass:[80,95,67],dirt:[121,107,83],road:[65,67,62],concrete:[145,139,122],plaster:[139,134,117],brick:[108,93,79],roof:[65,68,63],rust:[103,77,60],wood:[90,75,58],bark:[89,76,62],leaf:[57,81,52]}[type]||[125,120,106];let seed=type.length*19837+42;function rnd(){seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;}for(let y=0;y<w;y++)for(let x=0;x<w;x++){let i=(y*w+x)*4;let fine=(rnd()-.5)*32,grain=(Math.sin(x*.22+y*.11)+Math.sin(y*.09-x*.13))*4,coarse=(Math.sin(Math.floor(x/31)*9+Math.floor(y/34)*13))*6;let stripe=type==='wood'?Math.sin(x*.37)*7:0;for(let j=0;j<3;j++)im.data[i+j]=clamp(base[j]+fine+grain+coarse+stripe,0,255);im.data[i+3]=255;}g.putImageData(im,0,0);if(type==='road'){g.strokeStyle='#252a28';g.lineWidth=1;for(let i=0;i<13;i++){g.beginPath();let x=rnd()*w,y=rnd()*w;g.moveTo(x,y);for(let j=0;j<5;j++){x+=(rnd()-.5)*30;y+=rnd()*14;g.lineTo(x,y);}g.stroke();}}if(type==='brick'){g.strokeStyle='#574e44';g.lineWidth=2;for(let y=0;y<w;y+=29){g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke();for(let x=((y/29)%2)*29;x<w;x+=58){g.beginPath();g.moveTo(x,y);g.lineTo(x,y+29);g.stroke();}}}if(type==='wood'){g.strokeStyle='#544638';g.lineWidth=1;for(let i=0;i<16;i++){let x=rnd()*w;g.beginPath();g.moveTo(x,0);g.bezierCurveTo(x+5,80,x-6,164,x+3,w);g.stroke();}}const t=new T.CanvasTexture(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.anisotropy=renderer.capabilities.getMaxAnisotropy?Math.min(4,renderer.capabilities.getMaxAnisotropy()):1;t.encoding=T.sRGBEncoding;return t;}
-const tx={};for(const name of ['grass','dirt','road','concrete','plaster','brick','roof','rust','wood','bark','leaf'])tx[name]=tex(name);
+const tx={};for(const name of ['grass','dirt','road','concrete','plaster','brick','roof','rust','wood','bark','leaf']){tx[name]=tex(name);tx[name].name=name;}
 const mat=(color,opts={})=>new T.MeshStandardMaterial({color,roughness:.88,metalness:0,...opts});const mats={grass:mat(0xffffff,{map:tx.grass}),dirt:mat(0xffffff,{map:tx.dirt}),road:mat(0xffffff,{map:tx.road}),concrete:mat(0xffffff,{map:tx.concrete}),plaster:mat(0xffffff,{map:tx.plaster}),brick:mat(0xffffff,{map:tx.brick}),roof:mat(0xffffff,{map:tx.roof}),wood:mat(0xffffff,{map:tx.wood}),rust:mat(0xffffff,{map:tx.rust}),bark:mat(0xffffff,{map:tx.bark}),leaves:mat(0xffffff,{map:tx.leaf,side:T.DoubleSide}),glass:mat(0x526a70,{metalness:.15,roughness:.18,transparent:true,opacity:.78}),dark:mat(0x252a29,{roughness:.58}),black:mat(0x171a19,{roughness:.82}),metal:mat(0x777971,{roughness:.48,metalness:.55}),yellow:mat(0xe9ba7b,{roughness:.7}),paint:mat(0x6e756f,{roughness:.54,metalness:.18}),red:mat(0x75564c,{roughness:.7}),skin:mat(0xb69d85,{roughness:.95}),skinZombie:mat(0x788471,{roughness:1}),cloth:mat(0x49554c),pants:mat(0x393f3c)};
 const boxG=new T.BoxGeometry(1,1,1),sphereG=new T.SphereGeometry(1,12,8),cylinderG=new T.CylinderGeometry(1,1,1,9);
 const colliders=[],houses=[],doors=[],loot=[],infected=[],cars=[],pickups=[],barricades=[],fx=[],containers=[],flares=[];let seed=5512;function rnd(){seed=(Math.imul(1664525,seed)+1013904223)>>>0;return seed/4294967296;}function range(a,b){return a+(b-a)*rnd();}
@@ -147,7 +148,7 @@ const trunks=new T.InstancedMesh(new T.CylinderGeometry(.13,.24,1,7),mats.bark,t
 const canopy=new T.InstancedMesh(new T.IcosahedronGeometry(1,1),mats.leaves,treePoints.length*6);
 let canopyIndex=0;for(let i=0;i<treePoints.length;i++){let p=treePoints[i];dummy.position.set(p.x,p.y+2.75*p.s,p.z);dummy.rotation.set(0,range(-.2,.2),0);dummy.scale.set(p.s,5.5*p.s,p.s);dummy.updateMatrix();trunks.setMatrixAt(i,dummy.matrix);let colors=[0x496b48,0x3c5b42,0x54704b,0x60774f];for(let j=0;j<6;j++){let layer=Math.floor(j/2),spread=(2-layer)*.5;let yy=p.y+(2.5+layer*.85)*p.s;dummy.position.set(p.x+range(-spread,spread)*p.s,yy,p.z+range(-spread,spread)*p.s);dummy.rotation.set(range(-.2,.2),range(-PI,PI),range(-.2,.2));dummy.scale.set((1.35-layer*.22)*p.s,(1.05-layer*.05)*p.s,(1.3-layer*.2)*p.s);dummy.updateMatrix();canopy.setMatrixAt(canopyIndex,dummy.matrix);canopy.setColorAt(canopyIndex,new T.Color(colors[(i+j)%colors.length]));canopyIndex++;}}
 trunks.instanceMatrix.needsUpdate=true;canopy.instanceMatrix.needsUpdate=true;trunks.castShadow=true;canopy.castShadow=true;canopy.receiveShadow=true;scene.add(trunks,canopy);
-function shrub(x,z,r=.7){let g=new T.Group();g.position.set(x,groundH(x,z),z);for(let j=0;j<4;j++)orb((rnd()-.5)*r*.7,r*.55+(rnd()-.5)*.2,(rnd()-.5)*r*.7,r*.65,mats.leaves,g);scene.add(g);}
+function shrub(x,z,r=.7){let g=new T.Group();g.position.set(x,groundH(x,z),z);for(let j=0;j<4;j++)orb((rnd()-.5)*r*.7,r*.55+(rnd()-.5)*.2,(rnd()-.5)*r*.7,r*.65,mats.leaves,g);g.userData.oldShrub=true;scene.add(g);}
 for(let i=0;i<75;i++){let x=range(-105,105),z=range(-105,105);if(Math.abs(x)<12||Math.abs(z-27)<8)continue;shrub(x,z,range(.45,.9));}
 // Distinct roadside structures with doorway openings and interior props.
 function house(cx,cz,w,d,kind=0,face=1){let g=new T.Group();g.position.set(cx,0,cz);scene.add(g);let yy=groundH(cx,cz),height=kind===2?5.5:4.2,wall=kind===1?mats.brick:mats.plaster,th=.28,door=2.5;
@@ -167,7 +168,7 @@ function house(cx,cz,w,d,kind=0,face=1){let g=new T.Group();g.position.set(cx,0,
  doors.push({id:doors.length,x:cx,z:cz+face*(d/2+.04),w:door,face,open:false,hinge});
  // Side/back collision boxes leave a doorway so the player can explore the interior.
  block(cx-w/2+th/2,cz,th,d);block(cx+w/2-th/2,cz,th,d);block(cx,cz-face*d/2+face*th/2,w,th);block(cx-(door+wing)/2,cz+face*(d/2-th/2),wing,th);block(cx+(door+wing)/2,cz+face*(d/2-th/2),wing,th);
- houses.push({x:cx,z:cz,w,d});return g;}
+ houses.push({x:cx,z:cz,w,d,g,kind,face,height,yy});return g;}
 house(-27,-25,12,12,0,1);house(27,-32,15,15,1,1);house(-26,16,16,13,2,-1);house(26,46,17,15,1,-1);house(-28,62,13,14,0,-1);house(29,-67,14,12,0,1);
 // Turn the first existing house into a recognizable shelter. No added draw-heavy buildings.
 const safehouse={x:-27,z:-25,rested:false};
@@ -184,7 +185,7 @@ shelterSign.position.set(-27,3.24,-18.84);scene.add(shelterSign);
 function vehicle(x,z,rot=0,type=0){let g=new T.Group();g.position.set(x,.05,z);g.rotation.y=rot;scene.add(g);const col=[mats.red,mats.paint,mats.rust][type%3];let h=groundH(x,z);cube(0,h+.8,0,2.15,.9,4.15,col,g);cube(0,h+1.52,-.3,1.83,.86,2.55,col,g);cube(0,h+1.58,.99,1.68,.76,.06,mats.glass,g);cube(0,h+1.57,-1.61,1.65,.76,.06,mats.glass,g);for(let a of [-1,1])for(let b of [-1,1]){const tyre=geom(new T.CylinderGeometry(.47,.47,.31,12),mats.black,a*1.1,h+.48,b*1.32,[1,1,1],g);tyre.rotation.z=PI/2;const hub=geom(new T.CylinderGeometry(.19,.19,.32,12),mats.metal,a*1.1,h+.48,b*1.32,[1,1,1],g);hub.rotation.z=PI/2;}
  for(let a of [-1,1]){cube(a*.74,h+.87,2.115,.32,.19,.075,mats.yellow,g);cube(a*.74,h+.87,-2.116,.29,.16,.075,mats.red,g);}cube(0,h+.72,2.13,1.3,.3,.09,mats.dark,g);cube(0,h+.31,-2.1,2.05,.16,.15,mats.metal,g);cube(0,h+2.02,-.7,1.75,.09,1.4,col,g);
  const hatch=new T.Group();hatch.position.set(0,h+1.2,-1.75);g.add(hatch);cube(0,.025,-.3,2.1,.14,.8,col,hatch);
- cars.push({id:cars.length,x,z,rot,searched:false,hatch});
+ cars.push({id:cars.length,x,z,rot,searched:false,hatch,g});
  const cs=Math.abs(Math.cos(rot)),sn=Math.abs(Math.sin(rot));block(x,z,2.4*cs+4.4*sn,4.4*cs+2.4*sn);}
 vehicle(8,-12,.09,0);vehicle(-8,9,PI/2,1);vehicle(9,41,0,2);vehicle(35,17,PI/2,1);vehicle(-44,39,0,2);vehicle(7,-58,-.3,0);
 // Checkpoint barricade, signposts, telephone poles, bins and roadside rubble.
@@ -224,17 +225,7 @@ searchContainer(29,50,'GARAGE LOCKER','garage','batteries',1);
 searchContainer(-27,61,'PANTRY CUPBOARD','house','rations',2);
 searchContainer(30,-69,'KITCHEN CUPBOARD','house','bottles',2);
 // Human-like rig using joint pivots rather than stationary boxes; legs/arms animate.
-function human(g,zombie=false){let root=new T.Group(),cloth=zombie?mats.red:mats.cloth,skin=zombie?mats.skinZombie:mats.skin,legmat=zombie?mats.pants:mats.dark;g.add(root);cube(0,1.62,0,.67,.9,.42,cloth,root);cube(0,1.85,-.27,.65,.62,.12,zombie?mats.rust:mats.dark,root);const neck=cyl(0,2.14,0,.13,.22,skin,root);let head=orb(0,2.43,0,.28,skin,root);head.scale.set(.95,1.17,.84);for(let x of [-.11,.11])orb(x,2.46,.25,.043,mats.black,root);if(!zombie){
- cube(0,2.65,0,.67,.21,.55,mats.dark,root);cube(0,1.43,-.31,.78,.47,.17,mats.black,root);
- cube(0,1.69,.27,.53,.56,.1,mats.dark,root);cube(0,1.77,.335,.42,.18,.06,mats.metal,root);
- for(let a of [-1,0,1])cube(a*.17,1.44,.34,.145,.16,.105,mats.rust,root);
- cube(-.36,1.62,-.06,.21,.52,.38,mats.wood,root);
- cube(0,2.37,.255,.37,.23,.14,mats.dark,root);
- }else{
- cube(0,2.21,.235,.3,.06,.04,mats.red,root);
- cube(-.2,1.53,.218,.16,.4,.045,mats.rust,root);
- cube(.19,1.81,.23,.14,.22,.06,mats.black,root);
- }const arms=[],legs=[];for(let s of [-1,1]){let a=new T.Group();a.position.set(s*.46,1.98,0);root.add(a);cube(s*.01,-.38,0,.23,.76,.26,cloth,a);orb(s*.01,-.78,0,.11,skin,a);arms.push(a);let l=new T.Group();l.position.set(s*.21,1.14,0);root.add(l);cube(0,-.48,0,.29,.93,.32,legmat,l);cube(0,-.94,.16,.34,.2,.48,mats.black,l);if(!zombie){cube(0,-.51,.19,.30,.20,.09,mats.black,l);cube(0,-.72,-.16,.27,.26,.06,mats.metal,l);}legs.push(l);}return {root,arms,legs,head};}
+function human(g,zombie=false){return DeadZoneVisuals.human(T,g,zombie,mats);}
 function spawnInfected(x,z,i){let g=new T.Group();scene.add(g);let rig=human(g,true);g.position.set(x,groundH(x,z),z);return {g,rig,x,z,homeX:x,homeZ:z,hp:95,alive:true,respawn:0,phase:i*1.3,attack:0,speed:range(.92,1.44),yaw:0,flinch:0,ai:'patrol',alertTimer:0,searchTimer:0,patrolTimer:0,goalX:x,goalZ:z,patrolPhase:i*1.4,senseTimer:0,seenX:x,seenZ:z};}
 for(let i=0;i<8;i++){let [x,z]=[[11,20],[-28,-5],[21,59],[-33,-46],[40,-15],[-36,36],[17,-62],[55,42]][i];infected.push(spawnInfected(x,z,i));}
 const avatar=new T.Group();const soldier=human(avatar,false);scene.add(avatar);const fpGun=new T.Group();camera.add(fpGun);scene.add(camera);
@@ -243,13 +234,7 @@ torch.position.set(0,-.10,-.24);torch.castShadow=false;camera.add(torch);
 const torchAim=new T.Object3D();torchAim.position.set(0,-.10,-8);camera.add(torchAim);torch.target=torchAim;
 const nightSky=new T.Color(0x111c2c),daySky=new T.Color(0xa6b6ad);
 let daylight=1;
-function weapon(parent,fp){let g=new T.Group();parent.add(g);const m=mats.dark;cube(0,0,0,.17,.2,.95,m,g);cube(0,.13,-.08,.16,.13,.5,mats.metal,g);cube(0,-.2,.22,.13,.27,.25,mats.black,g);cube(0,.04,-.53,.095,.11,.47,mats.metal,g);cyl(0,.04,-.81,.06,.52,mats.black,g).rotation.x=PI/2;cube(0,.25,-.16,.06,.16,.14,mats.black,g);cube(0,-.06,.52,.16,.15,.43,mats.wood,g);
-// Handguard ribs, sight housing, charging handle and shoulder pad for a more legible silhouette.
-for(let i=0;i<5;i++)cube(0,.085,-.62+i*.112,.23,.044,.045,mats.metal,g);
-cube(0,.31,-.16,.12,.055,.22,mats.metal,g);cube(0,.37,-.15,.045,.11,.055,mats.black,g);
-cube(.10,.06,.19,.07,.08,.18,mats.metal,g);cube(0,-.06,.73,.28,.28,.07,mats.black,g);
-cube(0,-.015,-.92,.115,.115,.08,mats.metal,g);
-return g;}
+function weapon(parent,fp){return DeadZoneVisuals.weapon(T,parent,mats);}
 const gun=weapon(fpGun,true);gun.position.set(.44,-.4,-.8);const sidearmGun=sidearmShape(fpGun);sidearmGun.position.set(.36,-.38,-.68);// Low-cost mesh flashes; no new texture downloads or persistent lights.
 const muzzleMat=new T.MeshBasicMaterial({color:0xffd480,transparent:true,opacity:.92,depthWrite:false,side:T.DoubleSide});
 const muzzleRifle=new T.Mesh(new T.ConeGeometry(.155,.48,6),muzzleMat);
@@ -257,8 +242,9 @@ muzzleRifle.rotation.x=-PI/2;muzzleRifle.position.set(0,.06,-1.15);gun.add(muzzl
 const muzzlePistol=new T.Mesh(new T.ConeGeometry(.11,.35,6),muzzleMat);
 muzzlePistol.rotation.x=-PI/2;muzzlePistol.position.set(0,.065,-.54);sidearmGun.add(muzzlePistol);
 const emberMat=new T.MeshBasicMaterial({color:0xf5aa68,transparent:true,opacity:.82});
+const visualUpgrade=DeadZoneVisuals.install({T,scene,renderer,camera,mats,ground,groundH,houses,cars,loot,infected,avatar,fpGun,pickups,containers,doors,grass,trunks,canopy,treePoints,sun,hemiLight,gun,sidearmGun,soldier});
 let skyTime=0;
-let state={x:-4,z:-5,yaw:-.2,pitch:-.035,tps:false,hp:100,food:80,water:80,ammo:20,reserve:80,mag:20,kills:0,found:0,med:1,scrap:0,rations:1,bottles:1,time:0,clock:375,stamina:100,started:false,paused:true,dead:false,shotAt:-1,flash:0,damage:0,toastUntil:0,auto:0,weapon:'rifle',hasPistol:false,pistolAmmo:12,pistolReserve:20,ads:false,crouched:false,jumpY:0,jumpVel:0,grounded:true,hitFlash:0,shotCount:0,flashlight:false,bandages:1,batteries:1,flares:0,batteryCharge:100,bleeding:0,safehouseRested:false};let joy={id:null,x:0,y:0},look={id:null,x:0,y:0},actions={fire:false,run:false},keys={},near=null,elapsed=0,frames=0,sway=0,recoil=0,adsBlend=0;
+let state={x:-4,z:-5,yaw:-.2,pitch:-.035,tps:false,hp:100,food:80,water:80,ammo:20,reserve:80,mag:20,kills:0,found:0,med:1,scrap:0,rations:1,bottles:1,time:0,clock:490,stamina:100,started:false,paused:true,dead:false,shotAt:-1,flash:0,damage:0,toastUntil:0,auto:0,weapon:'rifle',hasPistol:false,pistolAmmo:12,pistolReserve:20,ads:false,crouched:false,jumpY:0,jumpVel:0,grounded:true,hitFlash:0,shotCount:0,flashlight:false,bandages:1,batteries:1,flares:0,batteryCharge:100,bleeding:0,safehouseRested:false};let joy={id:null,x:0,y:0},look={id:null,x:0,y:0},actions={fire:false,run:false},keys={},near=null,elapsed=0,frames=0,sway=0,recoil=0,adsBlend=0;
 const fireTouches=new Set(),DEFAULT_CONTROLS={look:100,ads:70,leftFire:false,autoSprint:true,invertY:false,graphics:'balanced',positions:{}};let controlOptions={...DEFAULT_CONTROLS};
 try{let savedControls=JSON.parse(localStorage.getItem('deadzone_controls_v1')||'null');if(savedControls&&typeof savedControls==='object')controlOptions={...controlOptions,...savedControls};}catch(_){}
 function saveControlOptions(){try{localStorage.setItem('deadzone_controls_v1',JSON.stringify(controlOptions));}catch(_){}}
@@ -332,7 +318,7 @@ for(const [id,prop]of[['extraFire','leftFire'],['autoSprint','autoSprint'],['inv
 function applyGraphicsMode(){
  const preset=['low','balanced','high'].includes(controlOptions.graphics)?controlOptions.graphics:'balanced';
  const dpr=Math.min(window.devicePixelRatio||1,preset==='low'?1:preset==='high'?(mobile?1.5:1.75):(mobile?1.25:1.65));
- renderer.setPixelRatio(dpr);renderer.shadowMap.enabled=preset!=='low';renderer.shadowMap.needsUpdate=true;
+ visualUpgrade.quality(preset);renderer.setPixelRatio(dpr);renderer.shadowMap.enabled=preset!=='low';renderer.shadowMap.needsUpdate=true;
  scene.traverse(o=>{if(o.isMesh&&o.material){const ms=Array.isArray(o.material)?o.material:[o.material];for(const m of ms)m.needsUpdate=true;}});
  renderWidth=0;renderHeight=0;resize();
 }
@@ -347,6 +333,7 @@ function refreshAtmosphere(){
  daylight=daylightAt(state.clock);scene.background.copy(nightSky).lerp(daySky,daylight);
  scene.fog.color.copy(scene.background);scene.fog.density=.008+(.004*(1-daylight));
  hemiLight.intensity=.25+1.4*daylight;sun.intensity=.08+2.17*daylight;lamp.intensity=1.95*(1-daylight)+.14;
+ visualUpgrade.atmosphere(state,daylight);
  torch.visible=!!state.flashlight&&(state.batteryCharge||0)>0;
 }
 function toggleFlashlight(){if(state.paused||state.dead)return;if(!state.flashlight&&(state.batteryCharge||0)<=0){showToast('BATTERY EMPTY · USE SPARE BATTERY',1.3);return;}state.flashlight=!state.flashlight;
@@ -578,7 +565,7 @@ function render(){resize();const py=groundH(state.x,state.z),camH=(state.tps?2.6
  camera.rotation.order='YXZ';camera.rotation.y=state.yaw+PI;camera.rotation.x=state.pitch+recoil*.016;
  const nextFov=72-29*adsBlend;if(Math.abs(camera.fov-nextFov)>.04){camera.fov=nextFov;camera.updateProjectionMatrix();}
  gun.visible=!state.tps&&state.weapon!=='pistol';sidearmGun.visible=!state.tps&&state.weapon==='pistol';
- gun.position.set(.44-.30*adsBlend,-.42+.115*adsBlend-recoil*.055+Math.sin(sway)*.009,-.8-.13*adsBlend);
+ gun.position.set(.44*(1-adsBlend),-.42+.18*adsBlend-recoil*.055+Math.sin(sway)*.009,-.8-.13*adsBlend);
  sidearmGun.position.set(.36-.23*adsBlend,-.38+.10*adsBlend-recoil*.065,-.68-.10*adsBlend);
  gun.rotation.x=.035+recoil*.12;sidearmGun.rotation.x=recoil*.14;
  muzzleRifle.visible=state.flash>.015;muzzlePistol.visible=state.flash>.015;
@@ -654,8 +641,10 @@ const cadence=state.crouched?.82:run?.32:.58;if(elapsed-lastStepPulse>cadence){l
  if((frames++%8)===0){updateHud();drawMap();updateThreatDisplay();}if((frames%12)===0)refreshAtmosphere();}
 function updateHud(){for(const id of ['hp','food','water']){$(id).textContent=Math.ceil(state[id]);$(id+'bar').style.width=clamp(state[id],0,100)+'%';$(id+'bar').style.background=id==='hp'?'#8ebe96':id==='food'?'#cfba75':'#7ac7cd';}$('ammo').innerHTML=(state.weapon==='pistol'?state.pistolAmmo:state.ammo)+' <small>/ '+(state.weapon==='pistol'?state.pistolReserve:state.reserve)+'</small>';$('kills').textContent=(state.weapon==='pistol'?'PISTOL':'RIFLE')+' · INFECTED '+state.kills+' · SUPPLIES '+state.found;$('clock').textContent='DAY '+(Math.floor(state.clock/1440)+1)+' / '+String(Math.floor(state.clock/60)%24).padStart(2,'0')+':'+String(Math.floor(state.clock%60)).padStart(2,'0');$('fps').textContent=(state.ads?'ADS':state.tps?'THIRD-PERSON':'FIRST-PERSON')+' · '+(state.bleeding>0?'BLEEDING · USE BANDAGE':state.batteryCharge<15?'LOW FLASHLIGHT BATTERY':state.water<20?'LOW WATER':state.food<20?'LOW FOOD':state.crouched?'STEALTH / CROUCHING':state.scrap>=3?'BARRICADE READY':'SCAVENGE SUPPLIES');$('safehouseHint').textContent=dist(state.x,state.z,safehouse.x,safehouse.z)<11?'▣ ASHWOOD SAFEHOUSE':('▣ SAFEHOUSE '+Math.round(dist(state.x,state.z,safehouse.x,safehouse.z))+'m · X -27 Z -25');$('objective').textContent=state.found<5?'Find '+(5-state.found)+' more supply caches around the checkpoint.':state.kills<3?'Clear '+(3-state.kills)+' more infected and find a safe route.':'SECTOR 7 CLEAR · Keep surviving. Visit the safehouse to rest and store supplies.';syncUseButton();}
 function drawMap(){const w=180;map.clearRect(0,0,w,w);map.fillStyle='#152a25';map.fillRect(0,0,w,w);map.lineWidth=9;map.strokeStyle='#8c9380';const xx=90-state.x*1.3;map.beginPath();map.moveTo(xx,-10);map.lineTo(xx,w+10);map.stroke();const zz=90+(27-state.z)*1.3;map.lineWidth=7;map.beginPath();map.moveTo(-10,zz);map.lineTo(w+10,zz);map.stroke();function plot(x,z){return [90+(x-state.x)*1.3,90+(z-state.z)*1.3];}for(const h of houses){let [x,z]=plot(h.x,h.z);map.fillStyle='#bab39d';map.fillRect(x-h.w*.5,z-h.d*.5,h.w,h.d);}for(const l of loot){if(!l.ready)continue;let [x,z]=plot(l.x,l.z);map.fillStyle='#e7b76d';map.fillRect(x-2,z-2,4,4);}for(const e of infected){if(!e.alive||dist(e.x,e.z,state.x,state.z)>29)continue;let [x,z]=plot(e.x,e.z);map.fillStyle='#c97568';map.beginPath();map.arc(x,z,2.8,0,PI*2);map.fill();}map.save();map.translate(90,90);map.rotate(PI-state.yaw);map.fillStyle='#eff5e4';map.beginPath();map.moveTo(0, -10);map.lineTo(-7,7);map.lineTo(0,4);map.lineTo(7,7);map.closePath();map.fill();map.restore();map.strokeStyle='#ddd6bb99';map.lineWidth=2;map.strokeRect(1,1,w-2,w-2);}
+refreshAtmosphere();
 let last=performance.now();function loop(now){let dt=Math.min(.055,(now-last)/1000||0);last=now;requestAnimationFrame(loop);if(state.started&&!state.paused){update(dt);if(!state.paused)render();}else if(!state.started){render();}}requestAnimationFrame(loop);
 })();
 </script>
 </body>
 </html>
+
